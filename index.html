@@ -27,8 +27,8 @@
     --shadow: 0 4px 24px rgba(0,0,0,0.4);
   }
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-  html, body { height: 100%; overflow: hidden; }
-  body { background: var(--bg); color: var(--text); font-family: var(--font); font-size: 14px; display: flex; flex-direction: column; }
+  html { height: 100%; overflow: hidden; }
+  body { height: 100%; overflow: hidden; background: var(--bg); color: var(--text); font-family: var(--font); font-size: 14px; display: flex; flex-direction: column; }
 
   ::-webkit-scrollbar { width: 4px; height: 4px; }
   ::-webkit-scrollbar-track { background: transparent; }
@@ -74,6 +74,9 @@
 
   /* ===== LAYOUT ===== */
   #app { display: flex; flex: 1; overflow: hidden; position: relative; }
+  @media (max-width: 768px) {
+    #app { margin-bottom: 56px; }
+  }
 
   /* ===== MAIN VIEW ===== */
   #mainView { display: flex; flex: 1; overflow: hidden; }
@@ -101,11 +104,11 @@
     .cat-btn { padding: 4px 10px; font-size: 11px; }
 
     /* Menu grid: smaller chips, more columns */
-    #menuScroll { max-height: 120px; padding: 5px 10px; }
-    #menuGrid { grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 4px; }
-    .menu-chip { padding: 5px 5px; border-radius: 8px; }
+    #menuScroll { max-height: 110px; padding: 4px 8px; }
+    #menuGrid { grid-template-columns: repeat(3, 1fr); gap: 4px; }
+    .menu-chip { padding: 4px 4px; border-radius: 7px; }
     .menu-chip .chip-name { font-size: 11px; }
-    .menu-chip .chip-price { font-size: 10px; }
+    .menu-chip .chip-price { font-size: 10px; margin-top: 1px; }
 
     /* Compact quickAdd */
     #quickAdd { padding: 5px 10px; gap: 5px; }
@@ -395,7 +398,6 @@
   @media (max-width: 768px) {
     .top-nav { display: none; }
     #mobileTabBar { display: flex; }
-    body { padding-bottom: 56px; }
   }
   #mobileTabBar {
     display: none; position: fixed; bottom: 0; left: 0; right: 0;
