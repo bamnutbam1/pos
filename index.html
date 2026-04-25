@@ -29,6 +29,13 @@
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
   html { height: 100%; overflow: hidden; }
   body { height: 100%; overflow: hidden; background: var(--bg); color: var(--text); font-family: var(--font); font-size: 14px; display: flex; flex-direction: column; }
+  @media (max-width: 768px) {
+    html, body { overflow: hidden; height: 100%; }
+    body { display: block; }
+    #app { display: flex; flex-direction: column; height: calc(100vh - 48px); overflow: hidden; }
+    #mainView { flex: 1; overflow: hidden; }
+    #settingsView, #historyView { height: calc(100vh - 48px - 36px); overflow-y: auto; }
+  }
 
   ::-webkit-scrollbar { width: 4px; height: 4px; }
   ::-webkit-scrollbar-track { background: transparent; }
@@ -69,9 +76,6 @@
 
   /* ===== LAYOUT ===== */
   #app { display: flex; flex: 1; overflow: hidden; position: relative; }
-  @media (max-width: 768px) {
-    #app { margin-bottom: 48px; }
-  }
 
   /* ===== MAIN VIEW ===== */
   #mainView { display: flex; flex: 1; overflow: hidden; }
@@ -79,7 +83,7 @@
   /* Mobile layout */
   @media (max-width: 768px) {
     #mainView { flex-direction: column; }
-    #leftPanel { width: 100%; border-right: none; flex: 1; max-height: none; overflow: hidden; display: flex; flex-direction: column; }
+    #leftPanel { width: 100%; border-right: none; overflow: hidden; display: flex; flex-direction: column; height: 100%; }
     #rightPanel { flex: 1; }
 
     /* Topbar: เล็กมาก */
