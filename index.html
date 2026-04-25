@@ -49,6 +49,12 @@
     padding: 8px 12px; background: var(--card); border-bottom: 1px solid var(--border);
     flex-shrink: 0; gap: 8px; min-height: 52px;
   }
+  @media (max-width: 768px) {
+    #topbar { padding: 5px 10px; min-height: 44px; }
+    .store-name { font-size: 13px; }
+    #topbarLogo { width: 32px !important; height: 32px !important; }
+    .onum-badge { font-size: 11px; padding: 3px 9px; }
+  }
   .logo-area { display: flex; align-items: center; gap: 8px; }
   .logo-circle {
     width: 36px; height: 36px; border-radius: 50%;
@@ -75,11 +81,51 @@
   /* Mobile: stack vertically */
   @media (max-width: 768px) {
     #mainView { flex-direction: column; }
-    #leftPanel { width: 100%; border-right: none; border-bottom: 1px solid var(--border); max-height: 55vh; }
+    #leftPanel { width: 100%; border-right: none; flex: 1; max-height: none; overflow: hidden; }
     #rightPanel { flex: 1; }
     #topbar { flex-wrap: wrap; min-height: auto; }
     .store-sub { display: none; }
     #clock { display: none; }
+
+    /* Compact pasteBox on mobile */
+    #pasteBox { padding: 5px 10px; }
+    #pasteArea { height: 44px; font-size: 12px; }
+    .paste-row { margin-bottom: 4px; }
+    #suggestions { gap: 4px; margin-top: 4px; }
+    .sugg-btn { padding: 3px 8px; font-size: 11px; }
+    .sugg-all { padding: 3px 10px; font-size: 11px; }
+    .sugg-label { font-size: 10px; }
+
+    /* Compact category bar */
+    #catBar { padding: 5px 10px; gap: 5px; }
+    .cat-btn { padding: 4px 10px; font-size: 11px; }
+
+    /* Menu grid: smaller chips, more columns */
+    #menuScroll { max-height: 120px; padding: 5px 10px; }
+    #menuGrid { grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 4px; }
+    .menu-chip { padding: 5px 5px; border-radius: 8px; }
+    .menu-chip .chip-name { font-size: 11px; }
+    .menu-chip .chip-price { font-size: 10px; }
+
+    /* Compact quickAdd */
+    #quickAdd { padding: 5px 10px; gap: 5px; }
+    #qItem { padding: 6px 8px; font-size: 13px; }
+    #qQty { width: 46px; padding: 6px 4px; font-size: 13px; }
+    #qPrice { width: 66px; padding: 6px 6px; font-size: 13px; }
+    .btn-add { padding: 6px 12px; font-size: 13px; }
+
+    /* Compact customer box */
+    #custBox { padding: 5px 10px; gap: 5px; }
+    #custName { padding: 5px 8px; font-size: 13px; }
+    #tableNum { width: 95px; padding: 5px 6px; font-size: 13px; }
+
+    /* Order list takes remaining space */
+    #orderScroll { padding: 5px 10px; }
+    .order-item { padding: 7px 9px; gap: 6px; margin-bottom: 4px; }
+    .item-name { font-size: 12px; }
+    .qty-btn { width: 26px; height: 26px; font-size: 16px; }
+    .item-price-input { width: 58px; font-size: 11px; }
+    .item-total { min-width: 52px; font-size: 12px; }
   }
 
   /* ===== LEFT PANEL ===== */
