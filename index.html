@@ -351,26 +351,21 @@ select.inp { cursor: pointer; }
 
 /* ============================================================
    RECEIPT PRINT — 58mm THERMAL PAPER
-   กว้าง 58mm, พื้นที่พิมพ์จริงประมาณ 48mm (ขนาด font 8-9pt)
    ============================================================ */
 @media print {
-  /* ซ่อนทุกอย่างยกเว้น receipt */
   body > *:not(#receipt-print) { display: none !important; }
-  
-  /* ตั้งค่าหน้ากระดาษ 58mm */
   @page {
-    size: 58mm auto;          /* กว้าง 58mm สูงอัตโนมัติ */
-    margin: 0mm;              /* ไม่มี margin — ควบคุมใน receipt เอง */
+    size: 58mm auto;
+    margin: 0mm;
   }
-  
   #receipt-print {
     display: block !important;
     width: 58mm !important;
     max-width: 58mm !important;
     margin: 0 !important;
-    padding: 2mm 3mm !important;  /* padding ซ้าย-ขวา 3mm */
+    padding: 2mm 3mm !important;
     font-family: 'Courier New', Courier, monospace !important;
-    font-size: 8pt !important;    /* 8pt เหมาะ 58mm ได้ ~32 ตัวอักษร/บรรทัด */
+    font-size: 8pt !important;
     line-height: 1.4 !important;
     color: #000 !important;
     background: #fff !important;
@@ -379,48 +374,10 @@ select.inp { cursor: pointer; }
     word-break: break-all !important;
     white-space: pre-wrap !important;
   }
-  
-  /* ซ่อน bottom nav ขณะพิมพ์ */
   .bottom-nav { display: none !important; }
 }
 
-/* ====== Receipt preview (ไม่ใช่ print) ====== */
-#receipt-print {
-  display: none;
-}
-
-/* ====== Thermal receipt styles ====== */
-.rcpt-wrap {
-  font-family: 'Courier New', Courier, monospace;
-  font-size: 12px;
-  color: #111;
-  background: #fff;
-  padding: 6px 8px;
-  line-height: 1.5;
-  /* จำลอง 58mm บนหน้าจอ */
-}
-.rcpt-center { text-align: center; }
-.rcpt-bold { font-weight: bold; }
-.rcpt-lg { font-size: 15px; font-weight: bold; }
-.rcpt-sm { font-size: 10px; }
-.rcpt-dash { border-top: 1px dashed #888; margin: 3px 0; }
-.rcpt-solid { border-top: 2px solid #000; margin: 3px 0; }
-.rcpt-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: 4px;
-}
-.rcpt-row-left { flex: 1; word-break: break-all; }
-.rcpt-row-right { 
-  white-space: nowrap; 
-  font-weight: bold; 
-  min-width: 36px; 
-  text-align: right; 
-}
-.rcpt-indent { padding-left: 10px; font-size: 10px; color: #444; }
-.rcpt-spacer { height: 4px; }
-.rcpt-qr { text-align: center; margin: 4px 0; }
+#receipt-print { display: none; }
 
 /* ====== BOTTOM NAV ====== */
 .bottom-nav {
@@ -750,6 +707,18 @@ select.inp { cursor: pointer; }
         ⚪ ยังไม่ได้เชื่อมต่อ
       </div>
     </div>
+    
+    <!-- แก้บั๊กภาษาจีนด้วยการให้เลือกรหัสภาษาไทย -->
+    <div class="settings-row">
+      <div class="settings-label">รหัสภาษาไทย (แก้ปัญหาพริ้นเป็นภาษาจีน/สระลอย)</div>
+      <select class="settings-inp" id="s-thaicode">
+        <option value="21">21 (0x15) - มาตรฐานส่วนใหญ่</option>
+        <option value="20">20 (0x14) - เครื่องรุ่นเก่า</option>
+        <option value="26">26 (0x1A) - เครื่องบางยี่ห้อ</option>
+        <option value="16">16 (0x10) - เครื่องบางยี่ห้อ</option>
+      </select>
+    </div>
+
     <div class="toggle-row">
       <span class="toggle-label">ใช้พิมพ์ Bluetooth แทน Browser Print</span>
       <div class="toggle" id="bt-toggle" onclick="this.classList.toggle('on')"></div>
@@ -761,7 +730,8 @@ select.inp { cursor: pointer; }
         2. เปิดเครื่องพิมพ์ 58mm<br>
         3. กด "เชื่อมต่อ Bluetooth" แล้วเลือกเครื่องพิมพ์<br>
         4. เปิด Toggle "ใช้พิมพ์ Bluetooth"<br>
-        5. กดปุ่มพริ้นได้เลย
+        5. กดปุ่มพริ้นได้เลย<br>
+        * หากพริ้นแล้วสระลอย/ภาษาต่างดาว ลองเปลี่ยน "รหัสภาษาไทย" ด้านบนดูครับ
       </div>
     </div>
   </div>
@@ -829,6 +799,7 @@ let settings = {
   fontSize: 8,          // pt สำหรับ 58mm
   trailingLines: 3,     // บรรทัดว่างท้ายบิล
   autoCut: true,        // ตัดกระดาษอัตโนมัติ
+  thaiCodePage: 21      // รหัสภาษาไทยสำหรับ Bluetooth Printer (21 = 0x15)
 };
 
 // Menu data
@@ -1247,12 +1218,6 @@ function calcChange() {
 // PRINT — 58mm Thermal
 // ============================================================
 
-/**
- * สร้าง HTML ที่ optimize สำหรับกระดาษความร้อน 58mm
- * - ใช้ Courier New (monospace) — แต่ละตัวอักษรกว้างเท่ากัน
- * - font-size 8pt ≈ 32 ตัวอักษร ASCII / บรรทัด สำหรับ 58mm
- * - ตัวอักษรไทย 1 ตัว ≈ 1.5-2 ตัว ASCII จึงต้อง wrap
- */
 function buildReceiptHTML() {
   const totalText = document.getElementById('rcpt-total').textContent.replace('฿','');
   const chLabel = {line:'LINE', phone:'TEL', walkin:'WALK-IN'}[selectedChannel]||'-';
@@ -1267,8 +1232,6 @@ function buildReceiptHTML() {
   const specialAmt = special ? orderItems.reduce((s,x)=>s+x.qty,0)*10 : 0;
   const fs = settings.fontSize || 8;
 
-  // ฟังก์ชัน pad สำหรับ row สองข้าง (เฉพาะ ASCII safe)
-  // ใน thermal print ใช้ flex justify-between แทน
   const row = (left, right, bold=false) => `
     <div style="display:flex;justify-content:space-between;gap:2px${bold?';font-weight:bold':''}">
       <span style="flex:1;word-break:break-all">${left}</span>
@@ -1325,7 +1288,6 @@ function buildReceiptHTML() {
   html += center(settings.footer);
   html += center(`ส่งฟรี 2 กม. | ${settings.phone}`, 'font-size:'+(fs-1)+'pt');
 
-  // บรรทัดว่างท้ายบิล
   for(let i=0; i<(settings.trailingLines||3); i++) {
     html += '<br>';
   }
@@ -1340,7 +1302,6 @@ function printReceipt() {
   const printEl = document.getElementById('receipt-print');
   printEl.innerHTML = buildReceiptHTML();
 
-  // Inject @page rule dynamically เพื่อให้ชัวร์
   let styleEl = document.getElementById('print-style-58');
   if(!styleEl) {
     styleEl = document.createElement('style');
@@ -1556,6 +1517,10 @@ function renderSettings() {
   const tlEl = document.getElementById('s-trailing-lines');
   if(tlEl) tlEl.value = settings.trailingLines||3;
   
+  // โหลดค่ารหัสภาษาไทย
+  const tcEl = document.getElementById('s-thaicode');
+  if(tcEl) tcEl.value = settings.thaiCodePage || 21;
+  
   const acTog = document.getElementById('autocut-toggle');
   if(acTog) { if(settings.autoCut!==false) acTog.classList.add('on'); else acTog.classList.remove('on'); }
   if(settings.autoSheet) document.getElementById('auto-sheet-toggle').classList.add('on');
@@ -1575,6 +1540,7 @@ function saveSettings() {
   settings.promptpay = document.getElementById('s-promptpay').value;
   settings.fontSize = parseInt(document.getElementById('s-font-size').value)||8;
   settings.trailingLines = parseInt(document.getElementById('s-trailing-lines').value)||3;
+  settings.thaiCodePage = parseInt(document.getElementById('s-thaicode').value)||21;
   settings.autoCut = document.getElementById('autocut-toggle').classList.contains('on');
   settings.autoSheet = document.getElementById('auto-sheet-toggle').classList.contains('on');
   settings.qrCode = document.getElementById('qr-toggle').classList.contains('on');
@@ -1756,7 +1722,6 @@ function handlePrint() {
 
 // ============================================================
 // ESC/POS Bluetooth Print — 58mm Thermal
-// ใช้ TIS-620 encoding สำหรับภาษาไทย
 // ============================================================
 async function printViaBluetooth() {
   if(!orderItems.length){ showToast('ไม่มีรายการ','error'); return; }
@@ -1779,49 +1744,50 @@ async function printViaBluetooth() {
     const ESC = 0x1B, GS = 0x1D, LF = 0x0A;
     
     // Initialize printer
-    const INIT        = [ESC, 0x40];
-    // Character code page: TIS-620 (Thai) = page 20 = 0x14
-    // หรือ UTF-8 ถ้าเครื่องรองรับ — ลองทั้งสองแบบ
-    const SET_TIS620  = [ESC, 0x74, 0x15];  // code page 21 = Thai (most common for 58mm)
+    const INIT = [ESC, 0x40];
+    
+    // *** สำคัญมาก: ปิดโหมดภาษาจีน (Disable Chinese Character Mode) ***
+    // ป้องกันไม่ให้เครื่องตีความภาษาไทย 2 ตัวอักษรไปรวมเป็น 1 อักษรจีน
+    const DISABLE_ZH = [0x1C, 0x2E]; 
+    
+    // ตั้งค่า Code Page สำหรับภาษาไทย (TIS-620 / CP874) 
+    // ดึงค่ามาจากการตั้งค่า (Default 21)
+    const codePage = settings.thaiCodePage || 21;
+    const SET_TIS620 = [ESC, 0x74, codePage];  
+
     // Alignment
     const ALIGN_C     = [ESC, 0x61, 0x01];  // center
     const ALIGN_L     = [ESC, 0x61, 0x00];  // left
     // Text style
     const BOLD_ON     = [ESC, 0x45, 0x01];
     const BOLD_OFF    = [ESC, 0x45, 0x00];
-    // Size — 58mm พื้นที่พิมพ์ ~48mm
-    const SIZE_2H2W   = [GS,  0x21, 0x11];  // double height + double width (ชื่อร้าน)
-    const SIZE_2H1W   = [GS,  0x21, 0x01];  // double height only
-    const SIZE_NRM    = [GS,  0x21, 0x00];  // normal
+    // Size
+    const SIZE_2H2W   = [GS,  0x21, 0x11];  
+    const SIZE_2H1W   = [GS,  0x21, 0x01];  
+    const SIZE_NRM    = [GS,  0x21, 0x00];  
     // Line spacing
-    const LINE_SP_DEF = [ESC, 0x32];         // default line spacing
-    const LINE_SP_SML = [ESC, 0x33, 0x18];  // tighter (24 dots)
+    const LINE_SP_DEF = [ESC, 0x32];         
     // Paper feed & cut
-    const FEED_N      = (n) => [ESC, 0x64, n]; // feed n lines
-    const CUT_PARTIAL = [GS,  0x56, 0x01];  // partial cut
-    const CUT_FULL    = [GS,  0x56, 0x00];  // full cut
+    const FEED_N      = (n) => [ESC, 0x64, n]; 
+    const CUT_PARTIAL = [GS,  0x56, 0x01];  
 
     // ======= Thai encoding =======
-    // TIS-620 เป็น 1 byte ต่อ 1 ตัวอักษรไทย
-    // Unicode Thai block U+0E00-U+0E7F → TIS-620 0xA0-0xFF
     function thaiToTIS620(str) {
       const out = [];
       for(const ch of str) {
         const cp = ch.codePointAt(0);
         if(cp >= 0x0E00 && cp <= 0x0E7F) {
-          // TIS-620: Thai chars at U+0E01 → 0xA1
           out.push(cp - 0x0E00 + 0xA0);
         } else if(cp < 0x80) {
           out.push(cp);
         } else {
-          out.push(0x3F); // '?' for unsupported
+          out.push(0x3F); 
         }
       }
       return out;
     }
 
     // ======= Layout helpers =======
-    // 58mm ≈ 32 ตัวอักษร ASCII / บรรทัด (ที่ font ปกติ)
     const COLS = 32;
 
     function textLine(str, newline=true) {
@@ -1831,9 +1797,6 @@ async function printViaBluetooth() {
     }
 
     function centerLine(str) {
-      // Center: pad left
-      // ตัวอักษรไทย = 1 byte แต่กว้าง 2 cols บนเครื่องพิมพ์
-      // ประมาณ: นับ byte ไทย * 2 + ASCII * 1
       let visLen = 0;
       for(const ch of str) {
         const cp = ch.codePointAt(0);
@@ -1844,7 +1807,6 @@ async function printViaBluetooth() {
     }
 
     function twoColLine(left, right) {
-      // คำนวณความกว้างจริง
       let leftLen = 0, rightLen = 0;
       for(const ch of left) {
         leftLen += (ch.codePointAt(0) >= 0x0E00 && ch.codePointAt(0) <= 0x0E7F) ? 2 : 1;
@@ -1867,11 +1829,12 @@ async function printViaBluetooth() {
     // ======= Build ESC/POS byte array =======
     let bytes = [
       ...INIT,
-      ...SET_TIS620,
+      ...DISABLE_ZH,  // <--- สั่งปิดโหมดภาษาจีนตรงนี้
+      ...SET_TIS620,  // <--- สั่งเปิดภาษาไทยตรงนี้
       ...LINE_SP_DEF,
     ];
 
-    // ชื่อร้าน — center, double size
+    // ชื่อร้าน
     bytes.push(...ALIGN_C, ...BOLD_ON, ...SIZE_2H2W);
     bytes.push(...textLine(settings.shopname));
     bytes.push(...SIZE_NRM, ...BOLD_OFF);
@@ -1892,7 +1855,6 @@ async function printViaBluetooth() {
       const nameStr = (i+1)+'. '+item.name+(item.type?'('+item.type+')':'');
       const priceStr = (item.qty>1 ? 'x'+item.qty+' ' : '') + String(item.price*item.qty);
       
-      // ถ้า nameStr ยาวเกิน wrap ลงบรรทัดใหม่
       let visLen = 0;
       for(const ch of nameStr) {
         visLen += (ch.codePointAt(0) >= 0x0E00 && ch.codePointAt(0) <= 0x0E7F) ? 2 : 1;
@@ -1903,7 +1865,6 @@ async function printViaBluetooth() {
       if(totalLen <= COLS) {
         bytes.push(...twoColLine(nameStr, priceStr));
       } else {
-        // wrap: ชื่อก่อน แล้วราคา align ขวา
         bytes.push(...textLine(nameStr));
         const pad = Math.max(1, COLS - priceLen);
         bytes.push(...textLine(' '.repeat(pad) + priceStr));
@@ -1920,7 +1881,6 @@ async function printViaBluetooth() {
     if(specialAmt>0) bytes.push(...twoColLine('ส่งพิเศษ', '+'+specialAmt));
     bytes.push(...dashLine('='));
 
-    // ยอดสุทธิ — double height
     bytes.push(...BOLD_ON, ...SIZE_2H1W);
     bytes.push(...twoColLine('รวม', totalText+' บ.'));
     bytes.push(...SIZE_NRM, ...BOLD_OFF);
@@ -1934,7 +1894,6 @@ async function printViaBluetooth() {
     bytes.push(...centerLine(settings.footer));
     bytes.push(...centerLine('ส่งฟรี 2 กม. | ' + settings.phone));
 
-    // Feed + cut
     const trailingLines = settings.trailingLines || 3;
     bytes.push(...FEED_N(trailingLines));
     
@@ -1943,8 +1902,6 @@ async function printViaBluetooth() {
     }
 
     // ======= Send via BLE in chunks =======
-    // BLE MTU ประมาณ 20-512 bytes ขึ้นกับเครื่อง
-    // ใช้ 100 bytes / chunk พร้อม delay 30ms
     const CHUNK_SIZE = 100;
     const data = new Uint8Array(bytes);
     
@@ -1955,7 +1912,6 @@ async function printViaBluetooth() {
       } else {
         await btChar.writeValue(chunk);
       }
-      // delay ให้เครื่องพิมพ์ประมวลผลทัน
       await new Promise(r=>setTimeout(r, 30));
     }
 
