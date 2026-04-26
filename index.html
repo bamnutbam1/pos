@@ -7,6 +7,8 @@
 <meta name="theme-color" content="#1a0a00">
 <title>ครัวอ้อยอ้อย - ระบบรับออเดอร์</title>
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&family=Prompt:wght@400;600;700&display=swap" rel="stylesheet">
+<!-- เพิ่ม html2canvas สำหรับแปลงใบเสร็จเป็นรูปภาพ -->
+<script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
 <style>
 :root {
   --gold: #c9a84c;
@@ -171,11 +173,11 @@ select.inp { cursor: pointer; }
 .total-label { font-size: 11px; color: var(--text2); }
 .total-amount { font-family: 'Prompt', sans-serif; font-size: 20px; font-weight: 700; color: var(--gold-light); }
 .print-btn {
-  background: linear-gradient(135deg, var(--red), #8b1a10);
+  background: linear-gradient(135deg, #2980b9, #1c5982);
   color: #fff; border: none; border-radius: 8px; padding: 10px 18px;
   font-family: 'Prompt', sans-serif; font-weight: 700; font-size: 14px;
   cursor: pointer; transition: all 0.2s;
-  display: flex; align-items: center; gap: 6px;
+  display: flex; align-items: center; gap: 6px; justify-content: center;
 }
 .print-btn:active { transform: scale(0.95); }
 .clear-btn {
@@ -326,18 +328,20 @@ select.inp { cursor: pointer; }
   padding: 8px 12px; font-weight: 700; cursor: pointer; font-size: 13px;
 }
 
-/* ====== MODAL ====== */
+/* ====== MODAL PREVIEW ====== */
 .modal-overlay {
   display: none; position: fixed; inset: 0; z-index: 500;
-  background: rgba(0,0,0,0.85); align-items: flex-end; justify-content: center;
+  background: rgba(0,0,0,0.85); align-items: center; justify-content: center;
+  padding: 16px;
 }
 .modal-overlay.open { display: flex; }
 .modal-box {
   background: var(--dark2); border: 1px solid var(--gold);
-  border-radius: 16px 16px 0 0; padding: 20px; width: 100%; max-height: 90vh; overflow-y: auto;
-  animation: slideUp 0.3s ease;
+  border-radius: 16px; padding: 20px; width: 100%; max-width: 360px;
+  max-height: 90vh; overflow-y: auto; position: relative;
+  animation: zoomIn 0.2s ease;
 }
-@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+@keyframes zoomIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 .modal-title {
   font-family: 'Prompt', sans-serif; font-size: 16px; font-weight: 700;
   color: var(--gold); margin-bottom: 14px; text-align: center;
@@ -347,6 +351,32 @@ select.inp { cursor: pointer; }
   background: var(--card2); border: 1px solid var(--border);
   color: var(--text); width: 32px; height: 32px; border-radius: 8px;
   cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center;
+}
+.receipt-preview {
+  background: #fff; color: #000; font-family: 'Sarabun', sans-serif;
+  padding: 16px; font-size: 14px; line-height: 1.6;
+  width: 384px; /* ความกว้างมาตรฐานสำหรับแปลงเป็นรูป 58mm (48mm print area) */
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+/* ซ่อน canvas สำหรับ generate */
+#receipt-capture-area {
+  position: absolute;
+  top: -9999px;
+  left: -9999px;
+}
+.preview-img-container {
+  text-align: center;
+  background: #f0f0f0;
+  padding: 10px;
+  border-radius: 4px;
+  max-height: 50vh;
+  overflow-y: auto;
+}
+.preview-img-container img {
+  max-width: 100%;
+  height: auto;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
 }
 
 /* ====== RECEIPT PRINT ====== */
@@ -581,7 +611,7 @@ select.inp { cursor: pointer; }
   </div>
 
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
-    <button class="print-btn" onclick="handlePrint()" style="border-radius:8px;width:100%">🖨️ พริ้นใบเสร็จ</button>
+    <button class="print-btn" onclick="showPreview()" style="border-radius:8px;width:100%">👁️ ดูตัวอย่าง & พริ้น</button>
     <button class="add-btn" onclick="saveOrder()" style="background:linear-gradient(135deg,var(--green),#1a7a40)">💾 บันทึก</button>
   </div>
   <button class="add-btn" onclick="saveToSheet()" style="background:linear-gradient(135deg,#1a5276,#0d2d45);margin-bottom:8px">
@@ -659,9 +689,9 @@ select.inp { cursor: pointer; }
         ⚪ ยังไม่ได้เชื่อมต่อ
       </div>
     </div>
-    <div class="toggle-row">
+    <div class="toggle-row" style="display:none;">
       <span class="toggle-label">ใช้พิมพ์ Bluetooth แทน Browser Print</span>
-      <div class="toggle" id="bt-toggle" onclick="this.classList.toggle('on')"></div>
+      <div class="toggle on" id="bt-toggle"></div>
     </div>
     <div class="settings-row" style="background:rgba(201,168,76,0.06);border-radius:8px">
       <div class="settings-label" style="color:var(--gold);font-size:11px;line-height:1.8">
@@ -669,8 +699,7 @@ select.inp { cursor: pointer; }
         1. เปิด Bluetooth บนมือถือ<br>
         2. เปิดเครื่องพิมพ์ 58mm<br>
         3. กด "เชื่อมต่อ Bluetooth" แล้วเลือกเครื่องพิมพ์<br>
-        4. เปิด Toggle "ใช้พิมพ์ Bluetooth"<br>
-        5. กดปุ่มพริ้นได้เลย
+        4. กลับไปกดปุ่ม "👁️ ดูตัวอย่าง & พริ้น" ได้เลย
       </div>
     </div>
   </div>
@@ -695,6 +724,25 @@ select.inp { cursor: pointer; }
   <button class="save-btn" onclick="saveSettings()">💾 บันทึกการตั้งค่า</button>
 </div>
 
+<!-- PREVIEW MODAL -->
+<div id="preview-modal" class="modal-overlay">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closePreview()">✕</button>
+    <div class="modal-title">👁️ ตัวอย่างใบเสร็จ</div>
+    <div id="preview-content" class="preview-img-container"></div>
+    <div style="display:flex;gap:8px;margin-top:16px;">
+      <button class="print-btn" style="flex:1; justify-content:center; padding:12px;" onclick="executePrintImage()">
+        🖨️ พิมพ์ Bluetooth
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Hidden Canvas For Generating Image -->
+<div id="receipt-capture-area">
+  <div id="receipt-content-to-capture" class="receipt-preview"></div>
+</div>
+
 <!-- BOTTOM NAV -->
 <div class="bottom-nav">
   <button class="bottom-tab active" id="tab-order" onclick="showPage('order')">
@@ -717,7 +765,7 @@ select.inp { cursor: pointer; }
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
-<!-- Receipt Print Area -->
+<!-- Receipt Print Area (Fallback) -->
 <div id="receipt-print"></div>
 
 <script>
@@ -776,6 +824,7 @@ let selectedMenuId = null;
 let selectedType = null;
 let pasteQueue = [];
 let recentMenus = [];
+let printImageCanvas = null;
 
 // Load from localStorage
 function loadStorage() {
@@ -1179,6 +1228,100 @@ function calcChange() {
 }
 
 // ============================================================
+// MODAL PREVIEW & IMAGE GENERATION
+// ============================================================
+async function showPreview() {
+  if(!orderItems.length){ showToast('ไม่มีรายการ','error'); return; }
+  
+  const totalText = document.getElementById('rcpt-total').textContent.replace('฿','');
+  const chLabel = {line:'ไลน์', phone:'โทรศัพท์', walkin:'หน้าร้าน'}[selectedChannel]||'-';
+  const customer = document.getElementById('customer-name').value||'-';
+  const now = new Date();
+  const timeStr = now.toLocaleString('th');
+  const orderId = '#' + String(orderIdCounter).padStart(4,'0');
+  const disc = parseFloat(document.getElementById('discount-inp').value)||0;
+  const sub = getSubtotal();
+  const special = document.getElementById('special-toggle').classList.contains('on');
+  const specialAmt = special ? orderItems.reduce((s,x)=>s+x.qty,0)*10 : 0;
+  const totalAmount = parseFloat(totalText) || 0;
+
+  // สร้าง HTML สำหรับการแปลงเป็นรูปภาพ
+  let html = `
+    <div style="text-align:center;font-weight:bold;font-size:26px;margin-bottom:8px;">${settings.shopname}</div>
+    <div style="text-align:center;font-size:18px;margin-bottom:12px;">โทร: ${settings.phone}</div>
+    <div style="border-top:2px dashed #000;margin:12px 0;"></div>
+    <div style="display:flex;justify-content:space-between;font-size:18px;margin-bottom:4px;">
+      <span>ช่องทาง: ${chLabel}</span><span style="font-weight:bold;">${orderId}</span>
+    </div>
+    <div style="font-size:18px;margin-bottom:4px;">ลูกค้า: ${customer}</div>
+    <div style="font-size:18px;color:#444;">${timeStr}</div>
+    <div style="border-top:2px dashed #000;margin:12px 0;"></div>
+  `;
+  
+  orderItems.forEach((item,i)=>{
+    html += `
+      <div style="display:flex;justify-content:space-between;font-size:18px;margin-bottom:4px;">
+        <span style="font-weight:bold;">${settings.showNum?(i+1)+'. ':''}${item.name}${item.type ? ' (' + item.type + ')' : ''} x${item.qty}</span>
+        <span style="font-weight:bold;">${item.price * item.qty}</span>
+      </div>
+    `;
+    if(item.note) html += `<div style="font-size:16px;color:#555;padding-left:16px;margin-bottom:6px;">* ${item.note}</div>`;
+  });
+  
+  html += `<div style="border-top:2px dashed #000;margin:12px 0;"></div>`;
+  html += `<div style="display:flex;justify-content:space-between;font-size:18px;margin-bottom:4px;"><span>ยอดรวม</span><span>${sub}</span></div>`;
+  if(disc>0) html += `<div style="display:flex;justify-content:space-between;font-size:18px;margin-bottom:4px;"><span>ส่วนลด</span><span>-${disc}</span></div>`;
+  if(specialAmt>0) html += `<div style="display:flex;justify-content:space-between;font-size:18px;margin-bottom:4px;"><span>ส่งพิเศษ</span><span>+${specialAmt}</span></div>`;
+  html += `<div style="border-top:3px solid #000;margin:12px 0;"></div>`;
+  html += `<div style="display:flex;justify-content:space-between;font-weight:bold;font-size:24px;margin-bottom:12px;"><span>รวมสุทธิ</span><span>${totalText} บาท</span></div>`;
+  
+  // PromptPay QR Code (แบบรูปภาพ)
+  if(settings.promptpay && settings.qrCode) {
+    const payload = getPromptPayPayload(settings.promptpay, totalAmount);
+    // ใช้ Google Chart API สร้าง QR Code รูปภาพ
+    const qrUrl = `https://chart.googleapis.com/chart?chs=200x200&cht=qr&chl=${encodeURIComponent(payload)}&choe=UTF-8`;
+    html += `
+      <div style="text-align:center;margin-top:20px;">
+        <div style="font-size:18px;font-weight:bold;margin-bottom:8px;">ชำระเงินผ่าน QR Code</div>
+        <img src="${qrUrl}" style="width:200px;height:200px;" crossorigin="anonymous">
+        <div style="font-size:16px;margin-top:8px;">พร้อมเพย์: ${settings.promptpay}</div>
+      </div>
+    `;
+  }
+  
+  html += `<div style="border-top:2px dashed #000;margin:16px 0;"></div>`;
+  html += `<div style="text-align:center;font-size:18px;font-weight:bold;margin-bottom:8px;">${settings.footer}</div>`;
+  html += `<div style="text-align:center;font-size:16px;color:#555;">ขอบคุณที่อุดหนุนครับ/ค่ะ</div>`;
+  
+  const captureArea = document.getElementById('receipt-content-to-capture');
+  captureArea.innerHTML = html;
+  
+  // โชว์หน้าต่าง Modal ให้ผู้ใช้เห็นว่ากำลังประมวลผล
+  document.getElementById('preview-modal').classList.add('open');
+  document.getElementById('preview-content').innerHTML = '<div style="text-align:center;padding:20px;">กำลังสร้างตัวอย่างใบเสร็จ... ⏳</div>';
+
+  // ใช้ html2canvas แปลง div เป็นรูปภาพ (แก้ปัญหาภาษาไทย 100%)
+  setTimeout(() => {
+    html2canvas(captureArea, { 
+      scale: 1, // เอาขนาดแบบ 1:1 ของ 384px พอดีกับ 58mm
+      useCORS: true,
+      backgroundColor: '#ffffff'
+    }).then(canvas => {
+      printImageCanvas = canvas;
+      const imgData = canvas.toDataURL('image/png');
+      document.getElementById('preview-content').innerHTML = `<img src="${imgData}" alt="Receipt Preview">`;
+    }).catch(err => {
+      document.getElementById('preview-content').innerHTML = `<div style="color:red">เกิดข้อผิดพลาดในการสร้างรูป: ${err.message}</div>`;
+    });
+  }, 500); // รอฟอนต์โหลดนิดนึง
+}
+
+function closePreview() {
+  document.getElementById('preview-modal').classList.remove('open');
+  printImageCanvas = null;
+}
+
+// ============================================================
 // PRINT VIA BROWSER (Fallback)
 // ============================================================
 function printReceipt() {
@@ -1390,9 +1533,7 @@ function reprintOrder(id) {
   if(!o) return;
   orderItems = o.items;
   renderReceipt();
-  const useBt = document.getElementById('bt-toggle')?.classList.contains('on');
-  if(useBt && btChar) printViaBluetooth();
-  else printReceipt();
+  showPreview();
 }
 
 // ============================================================
@@ -1501,26 +1642,10 @@ function updateNote(id, val) {
 
 // ============================================================
 // BLUETOOTH PRINTER (58mm Thermal) 
-// - แก้ไขปัญหาภาษาไทย และแก้สูตร QR PromptPay ให้ชำระเงินได้
+// - แก้ไขปัญหาภาษาไทยด้วยการส่งเป็น "รูปภาพ (Bitmap)" 
 // ============================================================
 let btDevice = null;
 let btChar = null;
-
-// ฟังก์ชันแปลงภาษาไทยเป็น TIS-620 เพื่อไม่ให้เครื่องพริ้นเตอร์รวน (ห้ามใช้ UTF-8)
-function encodeThaiToTIS620(text) {
-  let result = [];
-  for (let i = 0; i < text.length; i++) {
-    let code = text.charCodeAt(i);
-    if (code >= 0x0E00 && code <= 0x0E7F) {
-      result.push(code - 0x0E00 + 0xA0);
-    } else if (code < 128) {
-      result.push(code);
-    } else {
-      result.push(0x3F); // ใส่ '?' สำหรับตัวอักษรที่ไม่รู้จัก
-    }
-  }
-  return result;
-}
 
 // สูตรสร้าง CRC16 มาตรฐาน PromptPay
 function crc16(s) {
@@ -1545,7 +1670,6 @@ function getPromptPayPayload(id, amount) {
   } else if (target.length === 13) { 
     acc = "0213" + target; 
   } else { 
-    // สำหรับเบอร์โทรศัพท์ ต้องเป็น 13 หลัก (ใส่ 0066 ด้านหน้าและตัด 0 ออก)
     let phone = target;
     if(phone.startsWith('0')) phone = phone.substring(1);
     phone = "0066" + phone;
@@ -1560,20 +1684,6 @@ function getPromptPayPayload(id, amount) {
   payload += "6304";
   payload += crc16(payload);
   return payload;
-}
-
-// คำสั่งวาด QR Code เครื่องพิมพ์
-function getQRCommand(payload) {
-  const data = Array.from(new TextEncoder().encode(payload));
-  const pL = (data.length + 3) % 256;
-  const pH = Math.floor((data.length + 3) / 256);
-  return [
-    29, 40, 107, 4, 0, 49, 65, 50, 0,
-    29, 40, 107, 3, 0, 49, 67, 6, // เปลี่ยนขนาด QR ให้เป็นเลข 6 เพื่อให้อ่านง่ายบน 58mm
-    29, 40, 107, 3, 0, 49, 69, 48,
-    29, 40, 107, pL, pH, 49, 80, 48, ...data,
-    29, 40, 107, 3, 0, 49, 81, 48
-  ];
 }
 
 async function connectBluetooth() {
@@ -1662,125 +1772,103 @@ function setBtStatus(connected) {
   }
 }
 
-function handlePrint() {
-  const useBt = document.getElementById('bt-toggle')?.classList.contains('on');
-  if(useBt && btChar) {
-    printViaBluetooth();
-  } else if(useBt && !btChar) {
-    showToast('⚠️ ยังไม่ได้เชื่อมต่อ Bluetooth — ไปที่ตั้งค่าเพื่อเชื่อมต่อก่อน', 'error');
-  } else {
-    printReceipt();
+// ============================================================
+// ฟังก์ชันแปลง Canvas เป็นรหัสภาพพิมพ์ขาวดำ (ESC/POS Image)
+// ============================================================
+function canvasToPrinterImage(canvas) {
+  const ctx = canvas.getContext('2d');
+  const width = canvas.width;
+  const height = canvas.height;
+  const imgData = ctx.getImageData(0, 0, width, height).data;
+  
+  // คำนวณความกว้างในหน่วยไบต์ (1 ไบต์ = 8 พิกเซล)
+  const bytesWidth = Math.ceil(width / 8);
+  const buffer = new Uint8Array(bytesWidth * height);
+  
+  // แปลง Pixel สีเป็นจุดขาวดำ (Dithering/Threshold)
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const idx = (y * width + x) * 4;
+      const r = imgData[idx];
+      const g = imgData[idx + 1];
+      const b = imgData[idx + 2];
+      const a = imgData[idx + 3];
+      
+      // ถ้าพื้นโปร่งใส หรือ สีสว่าง ให้เป็นสีขาว (0), นอกนั้นเป็นสีดำ (1)
+      let isBlack = false;
+      if (a > 128) { // ไม่โปร่งใส
+        const brightness = (r * 0.299 + g * 0.587 + b * 0.114);
+        if (brightness < 128) isBlack = true; 
+      }
+      
+      if (isBlack) {
+        const byteIdx = y * bytesWidth + Math.floor(x / 8);
+        const bitIdx = 7 - (x % 8);
+        buffer[byteIdx] |= (1 << bitIdx);
+      }
+    }
   }
+  
+  // สร้าง ESC/POS command สำหรับพิมพ์รูปภาพ (GS v 0)
+  const xL = bytesWidth % 256;
+  const xH = Math.floor(bytesWidth / 256);
+  const yL = height % 256;
+  const yH = Math.floor(height / 256);
+  
+  const header = new Uint8Array([0x1D, 0x76, 0x30, 0x00, xL, xH, yL, yH]);
+  
+  const printData = new Uint8Array(header.length + buffer.length);
+  printData.set(header);
+  printData.set(buffer, header.length);
+  
+  return printData;
 }
 
-async function printViaBluetooth() {
-  if(!orderItems.length){ showToast('ไม่มีรายการ','error'); return; }
+async function executePrintImage() {
+  if(!btChar) {
+    showToast('⚠️ กรุณาเชื่อมต่อบลูทูธก่อนพริ้น', 'error'); 
+    closePreview();
+    showPage('settings'); 
+    return; 
+  }
+  if(!printImageCanvas) {
+    showToast('⚠️ ไม่พบข้อมูลรูปภาพ กรุณาลองใหม่อีกครั้ง', 'error');
+    return;
+  }
+  
   try {
-    showToast('📡 กำลังส่งข้อมูลไปพิมพ์...');
-    const totalText = document.getElementById('rcpt-total').textContent.replace('฿','');
-    const totalAmount = parseFloat(totalText) || 0;
-    const chLabel = {line:'ไลน์', phone:'โทรศัพท์', walkin:'หน้าร้าน'}[selectedChannel]||'-';
-    const customer = document.getElementById('customer-name').value||'-';
-    const now = new Date();
-    const timeStr = now.toLocaleDateString('en-GB') + ' ' + now.toLocaleTimeString('th', {hour:'2-digit', minute:'2-digit'});
-    const orderId = '#' + String(orderIdCounter).padStart(4,'0');
-    const disc = parseFloat(document.getElementById('discount-inp').value)||0;
-    const sub = getSubtotal();
-    const special = document.getElementById('special-toggle').classList.contains('on');
-    const specialAmt = special ? orderItems.reduce((s,x)=>s+x.qty,0)*10 : 0;
-
-    const ESC = 0x1B, GS = 0x1D, FS = 0x1C;
-    const INIT = [
-      ESC, 0x40,      // 1. Reset
-      FS, 0x2E,       // 2. ยกเลิกโหมดภาษาจีน (สำคัญมาก ป้องกันฟอนต์บวม/เว้นวรรคผิดปกติ)
-      ESC, 0x74, 11,  // 3. กำหนด Code Page ให้เป็น 11 (PC874 สำหรับภาษาไทย)
-      ESC, 0x39, 1    // 4. เปิดระบบประมวลผลสระลอย (ถ้าเครื่องรองรับ)
-    ];
+    showToast('📡 กำลังส่งรูปใบเสร็จไปพิมพ์...');
+    const printData = canvasToPrinterImage(printImageCanvas);
     
-    const CENTER = [ESC, 0x61, 0x01];
-    const LEFT = [ESC, 0x61, 0x00];
-    const BOLD_ON = [ESC, 0x45, 0x01];
-    const BOLD_OFF = [ESC, 0x45, 0x00];
-    const LARGE = [GS, 0x21, 0x11]; 
-    const NORMAL = [GS, 0x21, 0x00];
-    const LINE_FEED = [0x0A];
-    const CUT = [GS, 0x56, 0x01];
-
-    // ฟังก์ชันพิมพ์บรรทัด โดยบังคับแปลงเป็น TIS-620 เท่านั้น
-    function line(text='') { return [...encodeThaiToTIS620(text), ...LINE_FEED]; }
-    function dashes() { return line('-'.repeat(32)); }
-    function dotted() { return line('- '.repeat(16)); }
-
-    // ฟังก์ชันจัดชิดซ้าย-ขวา พร้อมคำนวณความกว้างฟอนต์ไทยให้แม่นยำ (หักความกว้างของสระทิ้ง)
-    function padRow(left, right, width=32) {
-      const leftVisual = left.replace(/[\u0E31\u0E34-\u0E3A\u0E47-\u0E4E]/g, '').length;
-      const rightVisual = right.replace(/[\u0E31\u0E34-\u0E3A\u0E47-\u0E4E]/g, '').length;
-      let spaceLength = width - leftVisual - rightVisual;
-      if (spaceLength < 1) spaceLength = 1;
-      let pad = ' '.repeat(spaceLength);
-      return [...encodeThaiToTIS620(left + pad + right), ...LINE_FEED];
-    }
-
-    let bytes = [
-      ...INIT,
-      ...CENTER, ...BOLD_ON, ...LARGE,
-      ...line(settings.shopname),
-      ...NORMAL, ...BOLD_OFF,
-      ...line('โทร: ' + settings.phone),
-      ...line('Line: ' + settings.line),
-      ...dotted(),
-      ...LEFT,
-      ...line('ช่องทาง: ' + chLabel + '  ออเดอร์: ' + orderId),
-      ...line('ลูกค้า: ' + customer),
-      ...line('วันที่: ' + timeStr),
-      ...dashes(),
-    ];
-
-    orderItems.forEach((item, i) => {
-      const label = (settings.showNum?(i+1)+'. ':'') + item.name + (item.type ? '(' + item.type + ')' : '') + (item.qty > 1 ? ' x' + item.qty : '');
-      const priceStr = String(item.price * item.qty);
-      bytes.push(...padRow(label, priceStr));
-      if(item.note) bytes.push(...line('   * ' + item.note));
-    });
-
-    bytes.push(...dashes());
-    bytes.push(...padRow('ยอดรวม', String(sub)));
-    if(disc > 0) bytes.push(...padRow('ส่วนลด', '-' + disc));
-    if(specialAmt > 0) bytes.push(...padRow('ส่งพิเศษ', '+' + specialAmt));
-    bytes.push(...dashes());
-    bytes.push(...BOLD_ON, ...LARGE);
-    bytes.push(...padRow('รวม', totalAmount.toFixed(2) + ' บาท'));
-    bytes.push(...NORMAL, ...BOLD_OFF);
+    // เติมคำสั่ง Init และตัดกระดาษตอนท้าย
+    const ESC = 0x1B, GS = 0x1D;
+    const initCmd = new Uint8Array([ESC, 0x40]);
+    const cutCmd = new Uint8Array([0x0A, 0x0A, 0x0A, GS, 0x56, 0x01]);
     
-    // ตรวจสอบและสร้าง PromptPay QR
-    if(settings.promptpay && settings.qrCode) {
-      bytes.push(...CENTER, ...line('ชำระเงินผ่าน QR Code'));
-      let payload = getPromptPayPayload(settings.promptpay, totalAmount);
-      bytes.push(...getQRCommand(payload));
-      bytes.push(...line('PromptPay: ' + settings.promptpay));
-    }
+    const finalData = new Uint8Array(initCmd.length + printData.length + cutCmd.length);
+    finalData.set(initCmd);
+    finalData.set(printData, initCmd.length);
+    finalData.set(cutCmd, initCmd.length + printData.length);
     
-    bytes.push(...dotted());
-    bytes.push(...CENTER, ...line(settings.footer));
-    bytes.push(...LINE_FEED, ...LINE_FEED, ...LINE_FEED);
-    bytes.push(...CUT);
-
-    // ป้องกันปัญหา Buffer ล้น และ Hexadecimal Dump ด้วยการแบ่งส่งทีละ 20 Bytes!
-    const CHUNK = 20;
-    const data = new Uint8Array(bytes);
-    for(let i=0; i<data.length; i+=CHUNK) {
-      const chunk = data.slice(i, i+CHUNK);
+    // ทยอยส่งทีละ 256 bytes เพื่อไม่ให้ Buffer ล้น (Bluetooth LE ข้อจำกัด)
+    const CHUNK = 256;
+    for(let i=0; i<finalData.length; i+=CHUNK) {
+      const chunk = finalData.slice(i, i+CHUNK);
       if(btChar.properties.writeWithoutResponse) {
         await btChar.writeValueWithoutResponse(chunk);
       } else {
         await btChar.writeValue(chunk);
       }
-      await new Promise(r=>setTimeout(r, 20)); // รอเล็กน้อยให้พรินเตอร์พิมพ์ทัน
+      await new Promise(r=>setTimeout(r, 20)); 
     }
+    
     showToast('✅ พิมพ์สำเร็จ!');
+    closePreview();
     if(settings.autoSheet && settings.sheetUrl) setTimeout(()=>saveToSheet(), 500);
+    
   } catch(e) {
     showToast('❌ พิมพ์ล้มเหลว: ' + e.message, 'error');
+    console.error(e);
   }
 }
 
