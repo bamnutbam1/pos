@@ -349,26 +349,78 @@ select.inp { cursor: pointer; }
   cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center;
 }
 
-/* ====== RECEIPT PRINT ====== */
+/* ============================================================
+   RECEIPT PRINT — 58mm THERMAL PAPER
+   กว้าง 58mm, พื้นที่พิมพ์จริงประมาณ 48mm (ขนาด font 8-9pt)
+   ============================================================ */
 @media print {
+  /* ซ่อนทุกอย่างยกเว้น receipt */
   body > *:not(#receipt-print) { display: none !important; }
+  
+  /* ตั้งค่าหน้ากระดาษ 58mm */
+  @page {
+    size: 58mm auto;          /* กว้าง 58mm สูงอัตโนมัติ */
+    margin: 0mm;              /* ไม่มี margin — ควบคุมใน receipt เอง */
+  }
+  
   #receipt-print {
     display: block !important;
-    position: fixed; top: 0; left: 0; width: 58mm;
-    font-family: 'Courier New', monospace; font-size: 10px;
-    color: #000 !important; background: #fff !important;
-    padding: 4mm; margin: 0;
+    width: 58mm !important;
+    max-width: 58mm !important;
+    margin: 0 !important;
+    padding: 2mm 3mm !important;  /* padding ซ้าย-ขวา 3mm */
+    font-family: 'Courier New', Courier, monospace !important;
+    font-size: 8pt !important;    /* 8pt เหมาะ 58mm ได้ ~32 ตัวอักษร/บรรทัด */
+    line-height: 1.4 !important;
+    color: #000 !important;
+    background: #fff !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    word-break: break-all !important;
+    white-space: pre-wrap !important;
   }
+  
+  /* ซ่อน bottom nav ขณะพิมพ์ */
+  .bottom-nav { display: none !important; }
 }
+
+/* ====== Receipt preview (ไม่ใช่ print) ====== */
 #receipt-print {
   display: none;
-  font-family: 'Courier New', monospace; font-size: 11px; color: #222;
-  line-height: 1.5;
 }
-.receipt-line { border-top: 1px dashed #000; margin: 4px 0; }
-.receipt-center { text-align: center; }
-.receipt-bold { font-weight: bold; }
-.receipt-row { display: flex; justify-content: space-between; }
+
+/* ====== Thermal receipt styles ====== */
+.rcpt-wrap {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 12px;
+  color: #111;
+  background: #fff;
+  padding: 6px 8px;
+  line-height: 1.5;
+  /* จำลอง 58mm บนหน้าจอ */
+}
+.rcpt-center { text-align: center; }
+.rcpt-bold { font-weight: bold; }
+.rcpt-lg { font-size: 15px; font-weight: bold; }
+.rcpt-sm { font-size: 10px; }
+.rcpt-dash { border-top: 1px dashed #888; margin: 3px 0; }
+.rcpt-solid { border-top: 2px solid #000; margin: 3px 0; }
+.rcpt-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 4px;
+}
+.rcpt-row-left { flex: 1; word-break: break-all; }
+.rcpt-row-right { 
+  white-space: nowrap; 
+  font-weight: bold; 
+  min-width: 36px; 
+  text-align: right; 
+}
+.rcpt-indent { padding-left: 10px; font-size: 10px; color: #444; }
+.rcpt-spacer { height: 4px; }
+.rcpt-qr { text-align: center; margin: 4px 0; }
 
 /* ====== BOTTOM NAV ====== */
 .bottom-nav {
@@ -409,7 +461,7 @@ select.inp { cursor: pointer; }
 .chip {
   padding: 4px 10px; border-radius: 12px; font-size: 11px;
   background: var(--card2); border: 1px solid var(--border); cursor: pointer;
-  transition: all 0.15s;
+  transition: all 0.15px;
 }
 .chip.active { background: var(--gold); color: var(--dark); border-color: var(--gold); font-weight: 700; }
 .chip:active { transform: scale(0.95); }
@@ -611,6 +663,45 @@ select.inp { cursor: pointer; }
     <div class="settings-row"><div class="settings-label">ที่อยู่ / คำอวยพร (พริ้นท้ายบิล)</div><input class="settings-inp" id="s-footer" value="ขอบคุณที่ใช้บริการ 🙏 ส่งฟรี 2 กม."></div>
   </div>
 
+  <!-- ตั้งค่ากระดาษ 58mm -->
+  <div class="settings-section">
+    <div class="settings-header">📄 ตั้งค่ากระดาษความร้อน 58mm</div>
+    <div class="settings-row">
+      <div class="settings-label">ขนาด Font บนบิล (pt)</div>
+      <select class="settings-inp" id="s-font-size">
+        <option value="7">7pt — เล็กมาก (~36 ตัว/บรรทัด)</option>
+        <option value="8" selected>8pt — แนะนำ (~32 ตัว/บรรทัด)</option>
+        <option value="9">9pt — กลาง (~28 ตัว/บรรทัด)</option>
+        <option value="10">10pt — ใหญ่ (~24 ตัว/บรรทัด)</option>
+      </select>
+    </div>
+    <div class="settings-row">
+      <div class="settings-label">จำนวนบรรทัดว่างท้ายบิล (ก่อนตัด)</div>
+      <select class="settings-inp" id="s-trailing-lines">
+        <option value="2">2 บรรทัด</option>
+        <option value="3" selected>3 บรรทัด</option>
+        <option value="4">4 บรรทัด</option>
+        <option value="5">5 บรรทัด</option>
+      </select>
+    </div>
+    <div class="toggle-row">
+      <span class="toggle-label">ตัด/เว้นบรรทัดหลังพิมพ์ (auto-cut)</span>
+      <div class="toggle on" id="autocut-toggle" onclick="this.classList.toggle('on')"></div>
+    </div>
+    <div class="settings-row" style="background:rgba(201,168,76,0.06)">
+      <div class="settings-label" style="color:var(--gold);font-size:11px;line-height:1.9">
+        💡 <strong>ตั้งค่า Browser สำหรับ 58mm:</strong><br>
+        Chrome: ตั้ง Paper size = Custom 58×200mm<br>
+        Margin = None / Minimum<br>
+        ปิด Headers and footers<br>
+        Scale = 100% (อย่า Fit to page)<br>
+        <br>
+        iOS Safari: แตะ Share → Print → เลือกเครื่องพิมพ์<br>
+        ตั้ง Paper Size = 58mm ในหน้า Print
+      </div>
+    </div>
+  </div>
+
   <div class="settings-section">
     <div class="settings-header">📊 Google Sheet</div>
     <div class="settings-row">
@@ -717,7 +808,7 @@ select.inp { cursor: pointer; }
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
-<!-- Receipt Print Area -->
+<!-- Receipt Print Area — 58mm Thermal -->
 <div id="receipt-print"></div>
 
 <script>
@@ -735,9 +826,12 @@ let settings = {
   autoSheet: false,
   qrCode: true,
   showNum: true,
+  fontSize: 8,          // pt สำหรับ 58mm
+  trailingLines: 3,     // บรรทัดว่างท้ายบิล
+  autoCut: true,        // ตัดกระดาษอัตโนมัติ
 };
 
-// Menu data from image
+// Menu data
 let menuData = [
   // แนะนำ
   { id:1, name:'กะเพราหมูกรอบ', price:65, cat:'แนะนำ', types:[] },
@@ -758,7 +852,7 @@ let menuData = [
   { id:20, name:'ผัดกะเพรา', price:65, cat:'จานด่วน', types:['หมูกรอบ','หมู','ไก่','เนื้อ','ตับ','ทะเล'], prices:{หมูกรอบ:65,หมู:50,ไก่:50,เนื้อ:60,ตับ:55,ทะเล:65} },
   { id:21, name:'ผัดพริกแกง', price:60, cat:'จานด่วน', types:['หมูกรอบ','หมู','ไก่','เนื้อ','ตับ','ทะเล'], prices:{หมูกรอบ:60,หมู:50,ไก่:50,เนื้อ:60,ตับ:55,ทะเล:65}, sub:'ถั่วฝักยาว/หน่อไม้ดอง' },
   { id:22, name:'ข้าวราดทอดกระเทียม', price:65, cat:'จานด่วน', types:['หมูกรอบ','หมู','ไก่','เนื้อ','ตับ','ทะเล'], prices:{หมูกรอบ:65,หมู:50,ไก่:50,เนื้อ:60,ตับ:55,ทะเล:65} },
-  { id:23, name:'ผัดผัก', price:60, cat:'จานด่วน', types:['หมูกรอบ','หมู','ไก่','เนื้อ','ตับ'], prices:{หมูกรอบ:60,หมู:50,ไก่:50,เนื้อ:60,ตับ:55}, sub:'คะน้า/ผักบุ้ง/ผักกาดขาว/สั้วฝักยาว/คอกหอม' },
+  { id:23, name:'ผัดผัก', price:60, cat:'จานด่วน', types:['หมูกรอบ','หมู','ไก่','เนื้อ','ตับ'], prices:{หมูกรอบ:60,หมู:50,ไก่:50,เนื้อ:60,ตับ:55}, sub:'คะน้า/ผักบุ้ง/ผักกาดขาว/ถั่วฝักยาว/คอกหอม' },
   // อื่นๆ
   { id:30, name:'ข้าวไข่เจียวหมูสับ', price:40, cat:'อื่นๆ', types:[] },
   { id:31, name:'ข้าวไข่เจียวทรงเครื่อง', price:40, cat:'อื่นๆ', types:[] },
@@ -777,7 +871,6 @@ let selectedType = null;
 let pasteQueue = [];
 let recentMenus = [];
 
-// Load from localStorage
 function loadStorage() {
   try {
     const s = localStorage.getItem('kraow_settings');
@@ -802,7 +895,7 @@ function saveStorage() {
   } catch(e){}
 }
 
-let selectedChannel = 'line'; // default
+let selectedChannel = 'line';
 
 function setChannel(ch, el) {
   selectedChannel = ch;
@@ -874,7 +967,6 @@ function selectMenu(id) {
   selectedMenuId = id;
   document.getElementById('item-search').value = m.name;
   hideSuggest();
-  // Show type selector if has types
   if(m.types && m.types.length > 0) {
     document.getElementById('type-row').style.display = 'flex';
     renderTypeChips(m);
@@ -912,14 +1004,12 @@ function selectType(type, mid) {
 function handlePaste(e) {
   const text = e.clipboardData.getData('text');
   if(!text) return;
-  // Try to parse multi-line order
   const lines = text.split('\n').map(l=>l.trim()).filter(l=>l.length>0);
   if(lines.length > 1) {
     e.preventDefault();
     parsePasteLines(lines);
     return;
   }
-  // Single line - just fill
 }
 
 function parsePasteLines(lines) {
@@ -929,7 +1019,6 @@ function parsePasteLines(lines) {
   preview.innerHTML = '';
   
   for(const line of lines) {
-    // Try patterns: "กะเพราหมูกรอบ x2" or "กะเพรา 2 จาน" or "กะเพรา 65 x1"
     const parsed = parseOrderLine(line);
     if(parsed) {
       pasteQueue.push(parsed);
@@ -947,48 +1036,35 @@ function parsePasteLines(lines) {
     previewBox.style.display = 'block';
     showToast(`📋 พบ ${pasteQueue.length} รายการ`);
   } else {
-    // Just set the text
     document.getElementById('item-search').value = lines.join(' ');
     onMenuSearch(lines[0]);
   }
 }
 
 function parseOrderLine(line) {
-  // Smart parsing
   let qty = 1, price = 0, name = '', note = '', type = '';
-  
-  // Extract quantity: x2, 2จาน, จำนวน2
   let qtyMatch = line.match(/[xXXx×*](\d+)|(\d+)\s*(จาน|ที่|อัน|ชิ้น|กล่อง)/);
   if(qtyMatch) {
     qty = parseInt(qtyMatch[1]||qtyMatch[2]);
     line = line.replace(qtyMatch[0],'').trim();
   }
-  
-  // Extract price: just number at end
   let priceMatch = line.match(/(\d{2,3})\s*บาท?$|^\s*(\d{2,3})\s+/);
   if(priceMatch) {
     price = parseInt(priceMatch[1]||priceMatch[2]);
     line = line.replace(priceMatch[0],'').trim();
   }
-  
-  // Parentheses = note
   let noteMatch = line.match(/[（(]([^)）]+)[)）]/);
   if(noteMatch) {
     note = noteMatch[1];
     line = line.replace(noteMatch[0],'').trim();
   }
-  
   name = line.trim();
   if(!name) return null;
-  
-  // Find in menu
   const found = menuData.find(m => 
     m.name.includes(name) || name.includes(m.name) ||
     (m.types||[]).some(t => name.includes(t))
   );
-  
   if(found) {
-    // Check type
     if(found.types && found.types.length>0) {
       for(const t of found.types) {
         if(name.includes(t) || note.includes(t)) {
@@ -1001,10 +1077,8 @@ function parseOrderLine(line) {
     if(!price) price = found.price;
     name = found.name;
   } else {
-    // Guess price from known menu
-    if(!price) price = 50; // default
+    if(!price) price = 50;
   }
-  
   return { name, qty, price, note, type };
 }
 
@@ -1031,7 +1105,7 @@ function cancelPaste() {
 }
 
 // ============================================================
-// ADD ITEM MANUALLY
+// ADD ITEM
 // ============================================================
 function addItem() {
   const name = document.getElementById('item-search').value.trim();
@@ -1041,15 +1115,7 @@ function addItem() {
   if(!name){ showToast('กรุณาใส่ชื่อเมนู','error'); return; }
   if(!price && price!==0){ showToast('กรุณาใส่ราคา','error'); return; }
 
-  orderItems.push({
-    id: Date.now(),
-    name,
-    type: selectedType||'',
-    qty,
-    price,
-    note,
-  });
-  // recent
+  orderItems.push({ id: Date.now(), name, type: selectedType||'', qty, price, note });
   if(!recentMenus.includes(name)) {
     recentMenus.unshift(name);
     if(recentMenus.length>6) recentMenus.pop();
@@ -1057,7 +1123,6 @@ function addItem() {
   }
   renderOrderList();
   updateCartBadge();
-  // reset
   document.getElementById('item-search').value = '';
   document.getElementById('item-price').value = '';
   document.getElementById('item-note').value = '';
@@ -1179,60 +1244,138 @@ function calcChange() {
 }
 
 // ============================================================
-// PRINT
+// PRINT — 58mm Thermal
 // ============================================================
-function printReceipt() {
-  if(!orderItems.length){ showToast('ไม่มีรายการ','error'); return; }
+
+/**
+ * สร้าง HTML ที่ optimize สำหรับกระดาษความร้อน 58mm
+ * - ใช้ Courier New (monospace) — แต่ละตัวอักษรกว้างเท่ากัน
+ * - font-size 8pt ≈ 32 ตัวอักษร ASCII / บรรทัด สำหรับ 58mm
+ * - ตัวอักษรไทย 1 ตัว ≈ 1.5-2 ตัว ASCII จึงต้อง wrap
+ */
+function buildReceiptHTML() {
   const totalText = document.getElementById('rcpt-total').textContent.replace('฿','');
-  const chLabel = {line:'ไลน์', phone:'โทรศัพท์', walkin:'หน้าร้าน'}[selectedChannel]||'-';
+  const chLabel = {line:'LINE', phone:'TEL', walkin:'WALK-IN'}[selectedChannel]||'-';
   const customer = document.getElementById('customer-name').value||'-';
   const now = new Date();
-  const timeStr = now.toLocaleString('th');
-  const orderId = '#' + String(orderIdCounter).padStart(4,'0');
+  const dateStr = now.toLocaleDateString('th-TH');
+  const timeStr = now.toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit'});
+  const orderId = String(orderIdCounter).padStart(4,'0');
   const disc = parseFloat(document.getElementById('discount-inp').value)||0;
   const sub = getSubtotal();
   const special = document.getElementById('special-toggle').classList.contains('on');
   const specialAmt = special ? orderItems.reduce((s,x)=>s+x.qty,0)*10 : 0;
+  const fs = settings.fontSize || 8;
+
+  // ฟังก์ชัน pad สำหรับ row สองข้าง (เฉพาะ ASCII safe)
+  // ใน thermal print ใช้ flex justify-between แทน
+  const row = (left, right, bold=false) => `
+    <div style="display:flex;justify-content:space-between;gap:2px${bold?';font-weight:bold':''}">
+      <span style="flex:1;word-break:break-all">${left}</span>
+      <span style="white-space:nowrap;min-width:36px;text-align:right">${right}</span>
+    </div>`;
+
+  const dash = `<div style="border-top:1px dashed #000;margin:2px 0"></div>`;
+  const solid = `<div style="border-top:2px solid #000;margin:3px 0"></div>`;
+  const center = (txt, style='') => `<div style="text-align:center${style?';'+style:''}">${txt}</div>`;
+  const trailingLines = '\n'.repeat(settings.trailingLines || 3);
 
   let html = `
-    <div style="text-align:center;font-weight:bold;font-size:14px">${settings.shopname}</div>
-    <div style="text-align:center;font-size:11px">โทร: ${settings.phone} | Line: ${settings.line}</div>
-    <div style="border-top:1px dashed #000;margin:4px 0"></div>
-    <div style="display:flex;justify-content:space-between;font-size:11px">
-      <span>ช่องทาง: ${chLabel}</span><span>ออเดอร์: ${orderId}</span>
-    </div>
-    <div style="font-size:11px">ลูกค้า: ${customer}</div>
-    <div style="font-size:11px">วันที่: ${timeStr}</div>
-    <div style="border-top:1px dashed #000;margin:4px 0"></div>
+  <div style="
+    font-family:'Courier New',Courier,monospace;
+    font-size:${fs}pt;
+    line-height:1.45;
+    color:#000;
+    background:#fff;
+    width:52mm;
+    margin:0 auto;
+    padding:2mm 0;
+  ">
+    ${center(`<strong style="font-size:${fs+3}pt">${settings.shopname}</strong>`)}
+    ${center(`โทร: ${settings.phone}`)}
+    ${center(`Line: ${settings.line}`)}
+    ${dash}
+    ${row('ช่องทาง: '+chLabel, 'No.'+orderId)}
+    ${row('ลูกค้า: '+customer, '')}
+    ${row(dateStr, timeStr)}
+    ${dash}
   `;
-  orderItems.forEach((item,i)=>{
-    html += '<div style="display:flex;justify-content:space-between;font-size:11px">' +
-      '<span>' + (i+1) + '. ' + item.name + (item.type ? '(' + item.type + ')' : '') + (item.qty > 1 ? ' x' + item.qty : '') + '</span>' +
-      '<span>' + (item.price * item.qty) + '</span>' +
-    '</div>';
-    if(item.note) html += `<div style="font-size:10px;padding-left:12px">* ${item.note}</div>`;
+
+  orderItems.forEach((item, i) => {
+    const label = (i+1)+'. '+item.name+(item.type?'('+item.type+')':'');
+    const qtyPrice = (item.qty>1 ? 'x'+item.qty+' ' : '')+(item.price*item.qty);
+    html += row(label, qtyPrice);
+    if(item.note) html += `<div style="padding-left:10px;font-size:${fs-1}pt;color:#444">* ${item.note}</div>`;
   });
-  html += `<div style="border-top:1px dashed #000;margin:4px 0"></div>`;
-  html += `<div style="display:flex;justify-content:space-between;font-size:11px"><span>ยอดรวม</span><span>${sub}</span></div>`;
-  if(disc>0) html += `<div style="display:flex;justify-content:space-between;font-size:11px"><span>ส่วนลด</span><span>-${disc}</span></div>`;
-  if(specialAmt>0) html += `<div style="display:flex;justify-content:space-between;font-size:11px"><span>ส่งพิเศษ</span><span>+${specialAmt}</span></div>`;
-  html += `<div style="border-top:2px solid #000;margin:4px 0"></div>`;
-  html += `<div style="display:flex;justify-content:space-between;font-weight:bold;font-size:14px"><span>รวม</span><span>${totalText} บาท</span></div>`;
-  if(settings.promptpay) html += `<div style="text-align:center;font-size:11px;margin-top:4px">PromptPay: ${settings.promptpay}</div>`;
-  html += `<div style="border-top:1px dashed #000;margin:6px 0"></div>`;
-  html += `<div style="text-align:center;font-size:11px">${settings.footer}</div>`;
-  html += `<div style="text-align:center;font-size:10px">ส่งฟรี 2 กิโลเมตร | ${settings.phone}</div>`;
-  
+
+  html += dash;
+  html += row('ยอดรวม', sub+'');
+  if(disc>0) html += row('ส่วนลด', '-'+disc);
+  if(specialAmt>0) html += row('ส่งพิเศษ', '+'+specialAmt);
+  html += solid;
+  html += row(`<strong style="font-size:${fs+1}pt">รวม</strong>`,
+              `<strong style="font-size:${fs+2}pt">${totalText} บ.</strong>`, false);
+
+  if(settings.promptpay) {
+    html += dash;
+    html += center('PromptPay: '+settings.promptpay);
+  }
+
+  html += dash;
+  html += center(settings.footer);
+  html += center(`ส่งฟรี 2 กม. | ${settings.phone}`, 'font-size:'+(fs-1)+'pt');
+
+  // บรรทัดว่างท้ายบิล
+  for(let i=0; i<(settings.trailingLines||3); i++) {
+    html += '<br>';
+  }
+  html += '</div>';
+
+  return html;
+}
+
+function printReceipt() {
+  if(!orderItems.length){ showToast('ไม่มีรายการ','error'); return; }
+
   const printEl = document.getElementById('receipt-print');
-  printEl.innerHTML = html;
-  // ให้ browser render ก่อนค่อย print
+  printEl.innerHTML = buildReceiptHTML();
+
+  // Inject @page rule dynamically เพื่อให้ชัวร์
+  let styleEl = document.getElementById('print-style-58');
+  if(!styleEl) {
+    styleEl = document.createElement('style');
+    styleEl.id = 'print-style-58';
+    document.head.appendChild(styleEl);
+  }
+  styleEl.textContent = `
+    @media print {
+      @page {
+        size: 58mm auto;
+        margin: 0;
+      }
+      body > *:not(#receipt-print) { display: none !important; }
+      .bottom-nav { display: none !important; }
+      #receipt-print {
+        display: block !important;
+        width: 58mm !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        font-family: 'Courier New', Courier, monospace !important;
+        font-size: ${settings.fontSize||8}pt !important;
+        color: #000 !important;
+        background: #fff !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+    }
+  `;
+
   setTimeout(() => {
     window.print();
-    // Auto save to sheet
     if(settings.autoSheet && settings.sheetUrl) {
       setTimeout(()=>saveToSheet(), 500);
     }
-  }, 300);
+  }, 200);
 }
 
 // ============================================================
@@ -1282,7 +1425,7 @@ async function saveToSheet() {
   };
   
   try {
-    const res = await fetch(settings.sheetUrl, {
+    await fetch(settings.sheetUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
@@ -1408,6 +1551,13 @@ function renderSettings() {
   document.getElementById('s-sheet-name').value = settings.sheetName;
   document.getElementById('s-promptpay').value = settings.promptpay;
   
+  const fsEl = document.getElementById('s-font-size');
+  if(fsEl) fsEl.value = settings.fontSize||8;
+  const tlEl = document.getElementById('s-trailing-lines');
+  if(tlEl) tlEl.value = settings.trailingLines||3;
+  
+  const acTog = document.getElementById('autocut-toggle');
+  if(acTog) { if(settings.autoCut!==false) acTog.classList.add('on'); else acTog.classList.remove('on'); }
   if(settings.autoSheet) document.getElementById('auto-sheet-toggle').classList.add('on');
   if(settings.qrCode) document.getElementById('qr-toggle').classList.add('on');
   if(settings.showNum) document.getElementById('num-toggle').classList.add('on');
@@ -1423,6 +1573,9 @@ function saveSettings() {
   settings.sheetUrl = document.getElementById('s-sheet-url').value;
   settings.sheetName = document.getElementById('s-sheet-name').value;
   settings.promptpay = document.getElementById('s-promptpay').value;
+  settings.fontSize = parseInt(document.getElementById('s-font-size').value)||8;
+  settings.trailingLines = parseInt(document.getElementById('s-trailing-lines').value)||3;
+  settings.autoCut = document.getElementById('autocut-toggle').classList.contains('on');
   settings.autoSheet = document.getElementById('auto-sheet-toggle').classList.contains('on');
   settings.qrCode = document.getElementById('qr-toggle').classList.contains('on');
   settings.showNum = document.getElementById('num-toggle').classList.contains('on');
@@ -1443,8 +1596,6 @@ function renderMenuEditor() {
       <button class="menu-del-btn" onclick="deleteMenu(${m.id})">✕</button>
     </div>`).join('')}`;
   }).join('');
-  
-  // Fill cat options
   const sel = document.getElementById('new-menu-cat');
   sel.innerHTML = cats.map(c=>`<option value="${c}">${c}</option>`).join('') + '<option value="ใหม่">+ หมวดใหม่</option>';
 }
@@ -1498,11 +1649,10 @@ function showToast(msg, type='ok') {
 function updateNote(id, val) {
   const item = orderItems.find(x=>x.id===id);
   if(item) item.note = val;
-  // no re-render to avoid losing focus
 }
 
 // ============================================================
-// BLUETOOTH PRINTER (58mm Thermal)
+// BLUETOOTH PRINTER — ESC/POS 58mm
 // ============================================================
 let btDevice = null;
 let btChar = null;
@@ -1527,7 +1677,6 @@ async function connectBluetooth() {
     });
     btDevice.addEventListener('gattserverdisconnected', onBtDisconnected);
     const server = await btDevice.gatt.connect();
-    // Try common thermal printer service UUIDs
     let service, char;
     const serviceUUIDs = [
       '000018f0-0000-1000-8000-00805f9b34fb',
@@ -1605,101 +1754,217 @@ function handlePrint() {
   }
 }
 
+// ============================================================
+// ESC/POS Bluetooth Print — 58mm Thermal
+// ใช้ TIS-620 encoding สำหรับภาษาไทย
+// ============================================================
 async function printViaBluetooth() {
   if(!orderItems.length){ showToast('ไม่มีรายการ','error'); return; }
   try {
     showToast('📡 กำลังส่งข้อมูลไปพิมพ์...');
+
     const totalText = document.getElementById('rcpt-total').textContent.replace('฿','');
-    const chLabel = {line:'ไลน์', phone:'โทรศัพท์', walkin:'หน้าร้าน'}[selectedChannel]||'-';
+    const chLabel = {line:'LINE', phone:'TEL', walkin:'WALK-IN'}[selectedChannel]||'-';
     const customer = document.getElementById('customer-name').value||'-';
     const now = new Date();
-    const timeStr = now.toLocaleString('th');
-    const orderId = '#' + String(orderIdCounter).padStart(4,'0');
+    const dateStr = now.toLocaleDateString('th-TH');
+    const timeStr = now.toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'});
+    const orderId = String(orderIdCounter).padStart(4,'0');
     const disc = parseFloat(document.getElementById('discount-inp').value)||0;
     const sub = getSubtotal();
     const special = document.getElementById('special-toggle').classList.contains('on');
     const specialAmt = special ? orderItems.reduce((s,x)=>s+x.qty,0)*10 : 0;
 
-    // ESC/POS Commands for 58mm thermal printer
-    const ESC = 0x1B, GS = 0x1D;
-    const INIT = [ESC, 0x40];
-    const CENTER = [ESC, 0x61, 0x01];
-    const LEFT = [ESC, 0x61, 0x00];
-    const BOLD_ON = [ESC, 0x45, 0x01];
-    const BOLD_OFF = [ESC, 0x45, 0x00];
-    const LARGE = [GS, 0x21, 0x11]; // double width+height
-    const NORMAL = [GS, 0x21, 0x00];
-    const LINE_FEED = [0x0A];
-    const CUT = [GS, 0x56, 0x01]; // partial cut
+    // ======= ESC/POS constants =======
+    const ESC = 0x1B, GS = 0x1D, LF = 0x0A;
+    
+    // Initialize printer
+    const INIT        = [ESC, 0x40];
+    // Character code page: TIS-620 (Thai) = page 20 = 0x14
+    // หรือ UTF-8 ถ้าเครื่องรองรับ — ลองทั้งสองแบบ
+    const SET_TIS620  = [ESC, 0x74, 0x15];  // code page 21 = Thai (most common for 58mm)
+    // Alignment
+    const ALIGN_C     = [ESC, 0x61, 0x01];  // center
+    const ALIGN_L     = [ESC, 0x61, 0x00];  // left
+    // Text style
+    const BOLD_ON     = [ESC, 0x45, 0x01];
+    const BOLD_OFF    = [ESC, 0x45, 0x00];
+    // Size — 58mm พื้นที่พิมพ์ ~48mm
+    const SIZE_2H2W   = [GS,  0x21, 0x11];  // double height + double width (ชื่อร้าน)
+    const SIZE_2H1W   = [GS,  0x21, 0x01];  // double height only
+    const SIZE_NRM    = [GS,  0x21, 0x00];  // normal
+    // Line spacing
+    const LINE_SP_DEF = [ESC, 0x32];         // default line spacing
+    const LINE_SP_SML = [ESC, 0x33, 0x18];  // tighter (24 dots)
+    // Paper feed & cut
+    const FEED_N      = (n) => [ESC, 0x64, n]; // feed n lines
+    const CUT_PARTIAL = [GS,  0x56, 0x01];  // partial cut
+    const CUT_FULL    = [GS,  0x56, 0x00];  // full cut
 
-    function encodeText(text) {
-      return Array.from(new TextEncoder().encode(text));
+    // ======= Thai encoding =======
+    // TIS-620 เป็น 1 byte ต่อ 1 ตัวอักษรไทย
+    // Unicode Thai block U+0E00-U+0E7F → TIS-620 0xA0-0xFF
+    function thaiToTIS620(str) {
+      const out = [];
+      for(const ch of str) {
+        const cp = ch.codePointAt(0);
+        if(cp >= 0x0E00 && cp <= 0x0E7F) {
+          // TIS-620: Thai chars at U+0E01 → 0xA1
+          out.push(cp - 0x0E00 + 0xA0);
+        } else if(cp < 0x80) {
+          out.push(cp);
+        } else {
+          out.push(0x3F); // '?' for unsupported
+        }
+      }
+      return out;
     }
-    function line(text='') { return [...encodeText(text), ...LINE_FEED]; }
-    function dashes() { return line('-'.repeat(32)); }
-    function dotted() { return line('- '.repeat(16)); }
 
-    function padRow(left, right, width=32) {
-      const total = left.length + right.length;
-      if(total >= width) return encodeText(left.slice(0, width-right.length-1)+' '+right)+LINE_FEED;
-      const pad = ' '.repeat(width - total);
-      return [...encodeText(left + pad + right), ...LINE_FEED];
+    // ======= Layout helpers =======
+    // 58mm ≈ 32 ตัวอักษร ASCII / บรรทัด (ที่ font ปกติ)
+    const COLS = 32;
+
+    function textLine(str, newline=true) {
+      const bytes = thaiToTIS620(str);
+      if(newline) bytes.push(LF);
+      return bytes;
     }
 
+    function centerLine(str) {
+      // Center: pad left
+      // ตัวอักษรไทย = 1 byte แต่กว้าง 2 cols บนเครื่องพิมพ์
+      // ประมาณ: นับ byte ไทย * 2 + ASCII * 1
+      let visLen = 0;
+      for(const ch of str) {
+        const cp = ch.codePointAt(0);
+        visLen += (cp >= 0x0E00 && cp <= 0x0E7F) ? 2 : 1;
+      }
+      const pad = Math.max(0, Math.floor((COLS - visLen) / 2));
+      return textLine(' '.repeat(pad) + str);
+    }
+
+    function twoColLine(left, right) {
+      // คำนวณความกว้างจริง
+      let leftLen = 0, rightLen = 0;
+      for(const ch of left) {
+        leftLen += (ch.codePointAt(0) >= 0x0E00 && ch.codePointAt(0) <= 0x0E7F) ? 2 : 1;
+      }
+      for(const ch of right) {
+        rightLen += (ch.codePointAt(0) >= 0x0E00 && ch.codePointAt(0) <= 0x0E7F) ? 2 : 1;
+      }
+      const gap = Math.max(1, COLS - leftLen - rightLen);
+      return textLine(left + ' '.repeat(gap) + right);
+    }
+
+    function dashLine(char='-') {
+      return textLine(char.repeat(COLS));
+    }
+
+    function dotLine() {
+      return textLine('- '.repeat(COLS/2));
+    }
+
+    // ======= Build ESC/POS byte array =======
     let bytes = [
       ...INIT,
-      ...CENTER, ...BOLD_ON, ...LARGE,
-      ...line(settings.shopname),
-      ...NORMAL, ...BOLD_OFF,
-      ...line('โทร: ' + settings.phone),
-      ...line('Line: ' + settings.line),
-      ...dotted(),
-      ...LEFT,
-      ...line('ช่องทาง: ' + chLabel + '  ออเดอร์: ' + orderId),
-      ...line('ลูกค้า: ' + customer),
-      ...line('วันที่: ' + timeStr),
-      ...dashes(),
+      ...SET_TIS620,
+      ...LINE_SP_DEF,
     ];
 
+    // ชื่อร้าน — center, double size
+    bytes.push(...ALIGN_C, ...BOLD_ON, ...SIZE_2H2W);
+    bytes.push(...textLine(settings.shopname));
+    bytes.push(...SIZE_NRM, ...BOLD_OFF);
+
+    // ข้อมูลร้าน
+    bytes.push(...centerLine('โทร: ' + settings.phone));
+    bytes.push(...centerLine('Line: ' + settings.line));
+
+    bytes.push(...ALIGN_L);
+    bytes.push(...dashLine());
+    bytes.push(...twoColLine('ช่อง: '+chLabel, 'No.'+orderId));
+    bytes.push(...textLine('ลูกค้า: ' + customer));
+    bytes.push(...twoColLine(dateStr, timeStr));
+    bytes.push(...dashLine());
+
+    // รายการอาหาร
     orderItems.forEach((item, i) => {
-      const label = (i+1) + '. ' + item.name + (item.type ? '(' + item.type + ')' : '') + (item.qty > 1 ? ' x' + item.qty : '');
-      const priceStr = String(item.price * item.qty);
-      bytes.push(...padRow(label, priceStr));
-      if(item.note) bytes.push(...line('   * ' + item.note));
+      const nameStr = (i+1)+'. '+item.name+(item.type?'('+item.type+')':'');
+      const priceStr = (item.qty>1 ? 'x'+item.qty+' ' : '') + String(item.price*item.qty);
+      
+      // ถ้า nameStr ยาวเกิน wrap ลงบรรทัดใหม่
+      let visLen = 0;
+      for(const ch of nameStr) {
+        visLen += (ch.codePointAt(0) >= 0x0E00 && ch.codePointAt(0) <= 0x0E7F) ? 2 : 1;
+      }
+      const priceLen = priceStr.length;
+      const totalLen = visLen + priceLen + 1;
+
+      if(totalLen <= COLS) {
+        bytes.push(...twoColLine(nameStr, priceStr));
+      } else {
+        // wrap: ชื่อก่อน แล้วราคา align ขวา
+        bytes.push(...textLine(nameStr));
+        const pad = Math.max(1, COLS - priceLen);
+        bytes.push(...textLine(' '.repeat(pad) + priceStr));
+      }
+
+      if(item.note) {
+        bytes.push(...textLine('  * ' + item.note));
+      }
     });
 
-    bytes.push(...dashes());
-    bytes.push(...padRow('ยอดรวม', String(sub)));
-    if(disc > 0) bytes.push(...padRow('ส่วนลด', '-' + disc));
-    if(specialAmt > 0) bytes.push(...padRow('ส่งพิเศษ', '+' + specialAmt));
-    bytes.push(...dashes());
-    bytes.push(...BOLD_ON, ...LARGE);
-    bytes.push(...padRow('รวม', totalText + ' บาท'));
-    bytes.push(...NORMAL, ...BOLD_OFF);
-    if(settings.promptpay) {
-      bytes.push(...CENTER, ...line('PromptPay: ' + settings.promptpay));
-    }
-    bytes.push(...dotted());
-    bytes.push(...CENTER, ...line(settings.footer));
-    bytes.push(...LINE_FEED, ...LINE_FEED, ...LINE_FEED);
-    bytes.push(...CUT);
+    bytes.push(...dashLine());
+    bytes.push(...twoColLine('ยอดรวม', String(sub)));
+    if(disc>0) bytes.push(...twoColLine('ส่วนลด', '-'+disc));
+    if(specialAmt>0) bytes.push(...twoColLine('ส่งพิเศษ', '+'+specialAmt));
+    bytes.push(...dashLine('='));
 
-    // Send in chunks (BLE MTU ~20 bytes)
-    const CHUNK = 512;
+    // ยอดสุทธิ — double height
+    bytes.push(...BOLD_ON, ...SIZE_2H1W);
+    bytes.push(...twoColLine('รวม', totalText+' บ.'));
+    bytes.push(...SIZE_NRM, ...BOLD_OFF);
+
+    if(settings.promptpay) {
+      bytes.push(...dashLine());
+      bytes.push(...centerLine('PromptPay: ' + settings.promptpay));
+    }
+
+    bytes.push(...dotLine());
+    bytes.push(...centerLine(settings.footer));
+    bytes.push(...centerLine('ส่งฟรี 2 กม. | ' + settings.phone));
+
+    // Feed + cut
+    const trailingLines = settings.trailingLines || 3;
+    bytes.push(...FEED_N(trailingLines));
+    
+    if(settings.autoCut !== false) {
+      bytes.push(...CUT_PARTIAL);
+    }
+
+    // ======= Send via BLE in chunks =======
+    // BLE MTU ประมาณ 20-512 bytes ขึ้นกับเครื่อง
+    // ใช้ 100 bytes / chunk พร้อม delay 30ms
+    const CHUNK_SIZE = 100;
     const data = new Uint8Array(bytes);
-    for(let i=0; i<data.length; i+=CHUNK) {
-      const chunk = data.slice(i, i+CHUNK);
+    
+    for(let i=0; i<data.length; i+=CHUNK_SIZE) {
+      const chunk = data.slice(i, i+CHUNK_SIZE);
       if(btChar.properties.writeWithoutResponse) {
         await btChar.writeValueWithoutResponse(chunk);
       } else {
         await btChar.writeValue(chunk);
       }
+      // delay ให้เครื่องพิมพ์ประมวลผลทัน
       await new Promise(r=>setTimeout(r, 30));
     }
+
     showToast('✅ พิมพ์สำเร็จ!');
     if(settings.autoSheet && settings.sheetUrl) setTimeout(()=>saveToSheet(), 500);
+
   } catch(e) {
     showToast('❌ พิมพ์ล้มเหลว: ' + e.message, 'error');
+    console.error('BT Print error:', e);
   }
 }
 
@@ -1709,14 +1974,12 @@ async function printViaBluetooth() {
 loadStorage();
 renderOrderList();
 renderRecentTags();
-renderMenuBrowser(); // Fix: render menu on load
+renderMenuBrowser();
 document.getElementById('nav-sub').textContent = 'โทร. '+settings.phone;
 
-// Close suggest on outside click
 document.addEventListener('click', e=>{
   if(!e.target.closest('.inp-wrap')) hideSuggest();
 });
-// Enter key on search
 document.getElementById('item-search').addEventListener('keydown', e=>{
   if(e.key==='Enter') { hideSuggest(); document.getElementById('item-qty').focus(); }
 });
