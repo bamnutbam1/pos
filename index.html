@@ -1620,81 +1620,186 @@ async function printViaBluetooth() {
     const special = document.getElementById('special-toggle').classList.contains('on');
     const specialAmt = special ? orderItems.reduce((s,x)=>s+x.qty,0)*10 : 0;
 
-    // ESC/POS Commands for 58mm thermal printer
-    const ESC = 0x1B, GS = 0x1D;
-    const INIT = [ESC, 0x40];
-    const CENTER = [ESC, 0x61, 0x01];
-    const LEFT = [ESC, 0x61, 0x00];
-    const BOLD_ON = [ESC, 0x45, 0x01];
-    const BOLD_OFF = [ESC, 0x45, 0x00];
-    const LARGE = [GS, 0x21, 0x11]; // double width+height
-    const NORMAL = [GS, 0x21, 0x00];
-    const LINE_FEED = [0x0A];
-    const CUT = [GS, 0x56, 0x01]; // partial cut
+    // ============================================================
+    // TIS-620 (Windows-874) Encoder for Thai thermal printers
+    // ============================================================
+
+    // Unicode → TIS-620 byte map for Thai characters (U+0E00–U+0E7F)
+    // TIS-620 Thai range is 0xA1–0xFF
+    const TIS620_OFFSET = 0xA1 - 0x0E01; // Thai unicode base → TIS byte base
+
+    // Thai Unicode character categories for reordering
+    // Base consonants: 0E01–0E2E
+    // Vowels above/below: 0E31,0E34–0E3A,0E47–0E4E (non-spacing, print AFTER base)
+    // Vowels left: 0E40–0E44 (print BEFORE base in Unicode, but same column in TIS)
+    // Thai printers expect: [leading_vowel] [base] [upper/lower vowel] [tone]
+    // Because TIS-620 has fixed positions, we just map char→byte directly.
+    // The KEY fix: reorder Unicode combining sequences → printer column order.
+
+    const THAI_ABOVE = new Set([
+      0x0E31, // ั (sara a above)
+      0x0E34, 0x0E35, 0x0E36, 0x0E37, // ิ ี ึ ื
+      0x0E38, 0x0E39, // ุ ู (actually below)
+      0x0E3A, // ฺ (phinthu, below)
+      0x0E47, // ็
+      0x0E48, 0x0E49, 0x0E4A, 0x0E4B, // ่ ้ ๊ ๋ (tone marks)
+      0x0E4C, 0x0E4D, 0x0E4E, // ์ ํ ๎
+    ]);
+
+    // Leading vowels (appear before base in Unicode stream, same visual column)
+    const THAI_LEAD = new Set([0x0E40, 0x0E41, 0x0E42, 0x0E43, 0x0E44]); // เ แ โ ใ ไ
+
+    // Reorder Thai text clusters so printer gets: base → diacritic (top/bottom)
+    // Leading vowels in TIS-620 are already separate bytes, just map them directly.
+    function reorderThai(str) {
+      // Normalize: NFC first to merge any decomposed chars
+      str = str.normalize('NFC');
+      let out = [];
+      let i = 0;
+      while(i < str.length) {
+        const cp = str.codePointAt(i);
+        const ch = str[i];
+        // Thai leading vowel: เ แ โ ใ ไ — in TIS-620 these come first in byte stream
+        // but printers handle them fine if we keep original order for leading vowels.
+        // The real problem is Unicode puts SARA combinations in logical order
+        // but some printers need: consonant byte → tone/vowel bytes
+        // Since TIS-620 is single-byte, order = byte order on the wire.
+        // Unicode already has leading vowels BEFORE base: เก = 0x0E40 0x0E01
+        // That IS correct for TIS-620 too. So we just convert 1:1.
+        out.push(ch);
+        i += (cp > 0xFFFF) ? 2 : 1;
+      }
+      return out.join('');
+    }
+
+    // Convert a single Unicode codepoint to TIS-620 byte
+    function cpToTIS620(cp) {
+      if(cp >= 0x0E01 && cp <= 0x0E7F) {
+        return cp + TIS620_OFFSET; // 0x0E01 → 0xA1, etc.
+      }
+      if(cp === 0x0E3F) return 0xDF; // ฿ baht sign in TIS-620 = 0xDF (Windows-874)
+      if(cp < 0x80) return cp; // ASCII passthrough
+      // Fallback for unmapped chars
+      return 0x3F; // '?'
+    }
 
     function encodeText(text) {
-      return Array.from(new TextEncoder().encode(text));
+      text = reorderThai(text);
+      const bytes = [];
+      for(let i = 0; i < text.length; i++) {
+        const cp = text.codePointAt(i);
+        bytes.push(cpToTIS620(cp));
+        if(cp > 0xFFFF) i++; // surrogate pair skip
+      }
+      return bytes;
     }
-    function line(text='') { return [...encodeText(text), ...LINE_FEED]; }
-    function dashes() { return line('-'.repeat(32)); }
-    function dotted() { return line('- '.repeat(16)); }
 
+    // Count print columns: Thai = 1 col (non-spacing marks = 0), ASCII = 1 col
+    function printWidth(text) {
+      let w = 0;
+      text = text.normalize('NFC');
+      for(let i = 0; i < text.length; i++) {
+        const cp = text.codePointAt(i);
+        // Non-spacing Thai marks (above/below) take no extra column
+        if(THAI_ABOVE.has(cp)) { /* 0 width */ }
+        else { w++; }
+        if(cp > 0xFFFF) i++;
+      }
+      return w;
+    }
+
+    // ============================================================
+    // ESC/POS Commands
+    // ============================================================
+    const ESC = 0x1B, GS = 0x1D;
+    const INIT     = [ESC, 0x40];
+    const CENTER   = [ESC, 0x61, 0x01];
+    const LEFT     = [ESC, 0x61, 0x00];
+    const BOLD_ON  = [ESC, 0x45, 0x01];
+    const BOLD_OFF = [ESC, 0x45, 0x00];
+    const LARGE    = [GS, 0x21, 0x11];  // double width+height
+    const NORMAL   = [GS, 0x21, 0x00];
+    const LF       = [0x0A];
+    const CUT      = [GS, 0x56, 0x41, 0x00]; // full cut with feed
+
+    // Set TIS-620 / Windows-874 code page on printer
+    // ESC t n — select character code table: n=21 = Windows-874 (Thai) on most ESC/POS printers
+    const CODEPAGE_THAI = [ESC, 0x74, 0x15]; // 0x15 = 21 decimal
+
+    function thaiLine(text) {
+      return [...encodeText(text), ...LF];
+    }
+    function dashes(n=32) { return [...encodeText('-'.repeat(n)), ...LF]; }
+    function dotted(n=32) {
+      let s = '';
+      for(let i=0;i<n/2;i++) s += '- ';
+      return [...encodeText(s.trimEnd()), ...LF];
+    }
+
+    // padRow: left-align text, right-align price, total width in print columns
     function padRow(left, right, width=32) {
-      const total = left.length + right.length;
-      if(total >= width) return encodeText(left.slice(0, width-right.length-1)+' '+right)+LINE_FEED;
-      const pad = ' '.repeat(width - total);
-      return [...encodeText(left + pad + right), ...LINE_FEED];
+      const lw = printWidth(left);
+      const rw = printWidth(right);
+      const spaces = width - lw - rw;
+      const pad = spaces > 0 ? ' '.repeat(spaces) : ' ';
+      return [...encodeText(left + pad + right), ...LF];
     }
 
+    // ============================================================
+    // Build receipt bytes
+    // ============================================================
     let bytes = [
       ...INIT,
+      ...CODEPAGE_THAI,            // ← tell printer to use TIS-620/874
       ...CENTER, ...BOLD_ON, ...LARGE,
-      ...line(settings.shopname),
+      ...thaiLine(settings.shopname),
       ...NORMAL, ...BOLD_OFF,
-      ...line('โทร: ' + settings.phone),
-      ...line('Line: ' + settings.line),
+      ...thaiLine('โทร: ' + settings.phone),
+      ...thaiLine('Line: ' + settings.line),
       ...dotted(),
       ...LEFT,
-      ...line('ช่องทาง: ' + chLabel + '  ออเดอร์: ' + orderId),
-      ...line('ลูกค้า: ' + customer),
-      ...line('วันที่: ' + timeStr),
+      ...thaiLine('ช่องทาง: ' + chLabel + '  ' + orderId),
+      ...thaiLine('ลูกค้า: ' + customer),
+      ...thaiLine('วันที่: ' + timeStr),
       ...dashes(),
     ];
 
     orderItems.forEach((item, i) => {
-      const label = (i+1) + '. ' + item.name + (item.type ? '(' + item.type + ')' : '') + (item.qty > 1 ? ' x' + item.qty : '');
+      const label = (i+1) + '. ' + item.name + (item.type ? '('+item.type+')' : '') + (item.qty > 1 ? ' x'+item.qty : '');
       const priceStr = String(item.price * item.qty);
       bytes.push(...padRow(label, priceStr));
-      if(item.note) bytes.push(...line('   * ' + item.note));
+      if(item.note) bytes.push(...thaiLine('   * ' + item.note));
     });
 
     bytes.push(...dashes());
     bytes.push(...padRow('ยอดรวม', String(sub)));
-    if(disc > 0) bytes.push(...padRow('ส่วนลด', '-' + disc));
-    if(specialAmt > 0) bytes.push(...padRow('ส่งพิเศษ', '+' + specialAmt));
+    if(disc > 0) bytes.push(...padRow('ส่วนลด', '-' + String(disc)));
+    if(specialAmt > 0) bytes.push(...padRow('ส่งพิเศษ', '+' + String(specialAmt)));
     bytes.push(...dashes());
     bytes.push(...BOLD_ON, ...LARGE);
     bytes.push(...padRow('รวม', totalText + ' บาท'));
     bytes.push(...NORMAL, ...BOLD_OFF);
     if(settings.promptpay) {
-      bytes.push(...CENTER, ...line('PromptPay: ' + settings.promptpay));
+      bytes.push(...CENTER, ...thaiLine('PromptPay: ' + settings.promptpay));
     }
     bytes.push(...dotted());
-    bytes.push(...CENTER, ...line(settings.footer));
-    bytes.push(...LINE_FEED, ...LINE_FEED, ...LINE_FEED);
+    bytes.push(...CENTER, ...thaiLine(settings.footer));
+    bytes.push(...LF, ...LF, ...LF);
     bytes.push(...CUT);
 
-    // Send in chunks (BLE MTU ~20 bytes)
+    // ============================================================
+    // Send to BLE printer in chunks
+    // ============================================================
     const CHUNK = 512;
     const data = new Uint8Array(bytes);
-    for(let i=0; i<data.length; i+=CHUNK) {
-      const chunk = data.slice(i, i+CHUNK);
+    for(let i = 0; i < data.length; i += CHUNK) {
+      const chunk = data.slice(i, i + CHUNK);
       if(btChar.properties.writeWithoutResponse) {
         await btChar.writeValueWithoutResponse(chunk);
       } else {
         await btChar.writeValue(chunk);
       }
-      await new Promise(r=>setTimeout(r, 30));
+      await new Promise(r => setTimeout(r, 40));
     }
     showToast('✅ พิมพ์สำเร็จ!');
     if(settings.autoSheet && settings.sheetUrl) setTimeout(()=>saveToSheet(), 500);
