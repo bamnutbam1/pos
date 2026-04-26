@@ -351,13 +351,13 @@ select.inp { cursor: pointer; }
 
 /* ====== RECEIPT PRINT ====== */
 @media print {
-  body * { visibility: hidden; }
-  #receipt-print, #receipt-print * { visibility: visible; }
+  body > *:not(#receipt-print) { display: none !important; }
   #receipt-print {
+    display: block !important;
     position: fixed; top: 0; left: 0; width: 58mm;
     font-family: 'Courier New', monospace; font-size: 10px;
-    color: #000; background: #fff;
-    padding: 4mm;
+    color: #000 !important; background: #fff !important;
+    padding: 4mm; margin: 0;
   }
 }
 #receipt-print {
@@ -1186,12 +1186,14 @@ function printReceipt() {
   
   const printEl = document.getElementById('receipt-print');
   printEl.innerHTML = html;
-  window.print();
-  
-  // Auto save to sheet
-  if(settings.autoSheet && settings.sheetUrl) {
-    setTimeout(()=>saveToSheet(), 500);
-  }
+  // ให้ browser render ก่อนค่อย print
+  setTimeout(() => {
+    window.print();
+    // Auto save to sheet
+    if(settings.autoSheet && settings.sheetUrl) {
+      setTimeout(()=>saveToSheet(), 500);
+    }
+  }, 300);
 }
 
 // ============================================================
