@@ -708,13 +708,13 @@ select.inp { cursor: pointer; }
       </div>
     </div>
     
-    <!-- แก้บั๊กภาษาจีนด้วยการให้เลือกรหัสภาษาไทย -->
+    <!-- อัปเดตข้อมูลแนะนำสำหรับ BT-58D-OC22 โดยเฉพาะ -->
     <div class="settings-row">
       <div class="settings-label">รหัสภาษาไทย (แก้ปัญหาพริ้นเป็นภาษาจีน/สระลอย)</div>
       <select class="settings-inp" id="s-thaicode">
-        <option value="21">21 (0x15) - มาตรฐานส่วนใหญ่</option>
+        <option value="21">21 (0x15) - TIS-620 (แนะนำสำหรับ BT-58D)</option>
+        <option value="26">26 (0x1A) - CP874 (เครื่อง BT-58D บางล็อต)</option>
         <option value="20">20 (0x14) - เครื่องรุ่นเก่า</option>
-        <option value="26">26 (0x1A) - เครื่องบางยี่ห้อ</option>
         <option value="16">16 (0x10) - เครื่องบางยี่ห้อ</option>
       </select>
     </div>
@@ -725,13 +725,12 @@ select.inp { cursor: pointer; }
     </div>
     <div class="settings-row" style="background:rgba(201,168,76,0.06);border-radius:8px">
       <div class="settings-label" style="color:var(--gold);font-size:11px;line-height:1.8">
-        💡 <strong>วิธีใช้:</strong><br>
-        1. เปิด Bluetooth บนมือถือ<br>
-        2. เปิดเครื่องพิมพ์ 58mm<br>
-        3. กด "เชื่อมต่อ Bluetooth" แล้วเลือกเครื่องพิมพ์<br>
-        4. เปิด Toggle "ใช้พิมพ์ Bluetooth"<br>
-        5. กดปุ่มพริ้นได้เลย<br>
-        * หากพริ้นแล้วสระลอย/ภาษาต่างดาว ลองเปลี่ยน "รหัสภาษาไทย" ด้านบนดูครับ
+        💡 <strong>วิธีใช้สำหรับ BT-58D:</strong><br>
+        1. เปิด Bluetooth บนมือถือ และเปิดเครื่องพิมพ์<br>
+        2. กด "เชื่อมต่อ Bluetooth" และเลือกเครื่องพิมพ์<br>
+        3. เปิด Toggle "ใช้พิมพ์ Bluetooth"<br>
+        4. กดปุ่มพริ้นได้เลย (ระบบจะส่งคำสั่งปิดภาษาจีนให้อัตโนมัติ)<br>
+        * หากพริ้นแล้วสระยังเพี้ยน ลองสลับรหัสภาษาไทยเป็น 26 หรือ 21 ครับ
       </div>
     </div>
   </div>
@@ -799,7 +798,7 @@ let settings = {
   fontSize: 8,          // pt สำหรับ 58mm
   trailingLines: 3,     // บรรทัดว่างท้ายบิล
   autoCut: true,        // ตัดกระดาษอัตโนมัติ
-  thaiCodePage: 21      // รหัสภาษาไทยสำหรับ Bluetooth Printer (21 = 0x15)
+  thaiCodePage: 21      // รหัสภาษาไทยสำหรับ Bluetooth Printer (21 หรือ 26 สำหรับ BT-58D)
 };
 
 // Menu data
