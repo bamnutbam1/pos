@@ -1209,7 +1209,7 @@ function calcChange() {
 }
 
 // ============================================================
-// MODAL PREVIEW & IMAGE GENERATION (แก้ปัญหาระยะบรรทัดล้น 384px)
+// MODAL PREVIEW & IMAGE GENERATION 
 // ============================================================
 function getPromptPayPayload(id, amount) {
   function crc16(s) {
@@ -1720,6 +1720,101 @@ function showToast(msg, type='ok') {
 function updateNote(id, val) {
   const item = orderItems.find(x=>x.id===id);
   if(item) item.note = val;
+}
+
+// ============================================================
+// BLUETOOTH PRINTER (58mm Thermal)
+// ============================================================
+let btDevice = null;
+let btChar = null;
+
+async function connectBluetooth() {
+  if(!navigator.bluetooth) {
+    alert('❌ ระบบมือถือหรือเบราว์เซอร์นี้ไม่รองรับบลูทูธ\\n\\nคำแนะนำ:\\n1. ใช้แอป Chrome บน Android หรือ PC\\n2. ต้องเปิดเว็บผ่าน https:// (ห้ามเป็นเปิดเป็นไฟล์จากในเครื่อง)\\n3. ระบบ iOS (iPhone/iPad) จะไม่สามารถใช้งานบลูทูธบนเว็บได้ครับ');
+    return;
+  }
+  
+  try {
+    // ต้องเรียก requestDevice ทันทีหลังจากกดปุ่ม เพื่อไม่ให้เบราว์เซอร์ตัดสิทธิ์ user gesture
+    btDevice = await navigator.bluetooth.requestDevice({
+      acceptAllDevices: true,
+      optionalServices: [
+        '000018f0-0000-1000-8000-00805f9b34fb',
+        '49535343-fe7d-4ae5-8fa9-9fafd205e455',
+        '0000ff00-0000-1000-8000-00805f9b34fb',
+        '0000ffe0-0000-1000-8000-00805f9b34fb',
+        'e7810a71-73ae-499d-8c15-faa9aef0c3f2' // รหัสทั่วไปของเครื่องพิมพ์จีน
+      ]
+    });
+    
+    showToast('กำลังพยายามเชื่อมต่อเข้ากับ ' + (btDevice.name || 'เครื่องพิมพ์') + '...');
+    btDevice.addEventListener('gattserverdisconnected', onBtDisconnected);
+    
+    const server = await btDevice.gatt.connect();
+    
+    let service, char;
+    const serviceUUIDs = [
+      '000018f0-0000-1000-8000-00805f9b34fb',
+      '49535343-fe7d-4ae5-8fa9-9fafd205e455',
+      '0000ff00-0000-1000-8000-00805f9b34fb',
+      '0000ffe0-0000-1000-8000-00805f9b34fb',
+      'e7810a71-73ae-499d-8c15-faa9aef0c3f2'
+    ];
+    
+    for(let i=0; i<serviceUUIDs.length; i++) {
+      try {
+        service = await server.getPrimaryService(serviceUUIDs[i]);
+        if(service) {
+          const chars = await service.getCharacteristics();
+          char = chars.find(c=>c.properties.write||c.properties.writeWithoutResponse);
+        }
+        if(char) break;
+      } catch(e){}
+    }
+    
+    if(!char) throw new Error('ไม่พบช่องทางรับส่งข้อมูลของเครื่องพิมพ์บลูทูธตัวนี้ครับ');
+    
+    btChar = char;
+    setBtStatus(true);
+    showToast(`✅ เชื่อมต่อ ${btDevice.name||'เครื่องพิมพ์'} สำเร็จ`);
+    
+  } catch(e) {
+    alert('❌ เชื่อมต่อไม่สำเร็จ:\\n' + e.message + '\\n\\nตรวจสอบให้แน่ใจว่าเครื่องพิมพ์เปิดอยู่ และไม่ได้ถูกเชื่อมต่อค้างไว้กับแอปอื่นครับ');
+    btDevice = null; 
+    btChar = null;
+    setBtStatus(false);
+  }
+}
+
+function onBtDisconnected() {
+  btChar = null;
+  setBtStatus(false);
+  showToast('⚠️ เครื่องพิมพ์ตัดการเชื่อมต่อ', 'error');
+}
+
+function disconnectBluetooth() {
+  if(btDevice && btDevice.gatt.connected) btDevice.gatt.disconnect();
+  btDevice = null; btChar = null;
+  setBtStatus(false);
+  showToast('🔌 ตัดการเชื่อมต่อแล้ว');
+}
+
+function setBtStatus(connected) {
+  const el = document.getElementById('bt-status');
+  const conn = document.getElementById('bt-connect-btn');
+  const disc = document.getElementById('bt-disconnect-btn');
+  if(!el) return;
+  if(connected) {
+    el.innerHTML = `🟢 เชื่อมต่อแล้ว: <strong>${btDevice?.name||'เครื่องพิมพ์'}</strong>`;
+    el.style.color = 'var(--green)';
+    conn.style.display = 'none';
+    disc.style.display = 'flex';
+  } else {
+    el.innerHTML = '⚪ ยังไม่ได้เชื่อมต่อ';
+    el.style.color = 'var(--text2)';
+    conn.style.display = 'flex';
+    disc.style.display = 'none';
+  }
 }
 
 // ============================================================
