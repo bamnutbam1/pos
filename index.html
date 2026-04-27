@@ -609,7 +609,6 @@ select.inp { cursor: pointer; }
   </div>
 
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
-    <!-- นำปุ่มดูตัวอย่างก่อนพิมพ์กลับมาแล้วครับ -->
     <button class="print-btn" onclick="showPreview()" style="border-radius:8px;width:100%">👁️ ดูตัวอย่าง & พริ้น</button>
     <button class="add-btn" onclick="saveOrder()" style="background:linear-gradient(135deg,var(--green),#1a7a40)">💾 บันทึก</button>
   </div>
@@ -1407,56 +1406,55 @@ function showPreview() {
   const sub = getSubtotal();
   const totalAmount = parseFloat(totalText) || 0;
 
-  // ปรับตัวหนังสือลง 1 ระดับตามคำขอ (จาก 32px -> 28px, จาก 22px -> 18px, จาก 18px -> 14px)
+  // ปรับขนาดฟอนต์ให้ใหญ่ขึ้นเพื่อรองรับกระดาษ 58mm ได้อย่างสวยงาม
   let html = '';
   if(settings.logoUrl) {
-    html += `<div style="text-align:center; margin-bottom:8px;"><img src="${settings.logoUrl}" crossorigin="anonymous" style="max-width:120px; max-height:120px; border-radius:8px;" onerror="this.style.display='none'"></div>`;
+    html += `<div style="text-align:center; margin-bottom:10px;"><img src="${settings.logoUrl}" crossorigin="anonymous" style="max-width:140px; max-height:140px; border-radius:8px;" onerror="this.style.display='none'"></div>`;
   }
   
   html += `
-    <div style="text-align:center;font-weight:bold;font-size:28px;margin-bottom:8px;">${settings.shopname}</div>
-    <div style="text-align:center;font-size:18px;margin-bottom:12px;">โทร: ${settings.phone}</div>
-    <div style="border-top:2px dashed #000;margin:12px 0;"></div>
-    <div style="display:flex;justify-content:space-between;font-size:18px;margin-bottom:4px;">
+    <div style="text-align:center;font-weight:bold;font-size:34px;margin-bottom:10px;line-height:1.2;">${settings.shopname}</div>
+    <div style="text-align:center;font-size:22px;margin-bottom:14px;">โทร: ${settings.phone}</div>
+    <div style="border-top:2px dashed #000;margin:14px 0;"></div>
+    <div style="display:flex;justify-content:space-between;font-size:22px;margin-bottom:6px;">
       <span>ช่องทาง: ${chLabel}</span><span style="font-weight:bold;">${orderId}</span>
     </div>
-    <div style="font-size:18px;margin-bottom:4px;">ลูกค้า: ${customer}</div>
-    <div style="font-size:18px;color:#444;">${timeStr}</div>
-    <div style="border-top:2px dashed #000;margin:12px 0;"></div>
+    <div style="font-size:22px;margin-bottom:6px;">ลูกค้า: ${customer}</div>
+    <div style="font-size:20px;color:#444;">${timeStr}</div>
+    <div style="border-top:2px dashed #000;margin:14px 0;"></div>
   `;
   
   orderItems.forEach((item,i)=>{
     html += `
-      <div style="display:flex;justify-content:space-between;font-size:18px;margin-bottom:4px;">
+      <div style="display:flex;justify-content:space-between;font-size:24px;margin-bottom:6px;line-height:1.3;">
         <span style="font-weight:bold; flex:1; padding-right:10px; word-break: break-word;">${settings.showNum?(i+1)+'. ':''}${item.name}${item.type ? ' (' + item.type + ')' : ''} x${item.qty}</span>
         <span style="font-weight:bold; white-space: nowrap;">${item.price * item.qty}</span>
       </div>
     `;
-    if(item.note) html += `<div style="font-size:14px;color:#555;padding-left:16px;margin-bottom:6px;">* ${item.note}</div>`;
+    if(item.note) html += `<div style="font-size:20px;color:#555;padding-left:20px;margin-bottom:8px;line-height:1.2;">* ${item.note}</div>`;
   });
   
-  html += `<div style="border-top:2px dashed #000;margin:12px 0;"></div>`;
-  html += `<div style="display:flex;justify-content:space-between;font-size:18px;margin-bottom:4px;"><span>ยอดรวม</span><span>${sub}</span></div>`;
-  if(disc>0) html += `<div style="display:flex;justify-content:space-between;font-size:18px;margin-bottom:4px;"><span>ส่วนลด</span><span>-${disc}</span></div>`;
-  html += `<div style="border-top:3px solid #000;margin:12px 0;"></div>`;
-  html += `<div style="display:flex;justify-content:space-between;font-weight:bold;font-size:22px;margin-bottom:12px;"><span>รวมสุทธิ</span><span>${totalText} บาท</span></div>`;
+  html += `<div style="border-top:2px dashed #000;margin:14px 0;"></div>`;
+  html += `<div style="display:flex;justify-content:space-between;font-size:22px;margin-bottom:6px;"><span>ยอดรวม</span><span>${sub}</span></div>`;
+  if(disc>0) html += `<div style="display:flex;justify-content:space-between;font-size:22px;margin-bottom:6px;"><span>ส่วนลด</span><span>-${disc}</span></div>`;
+  html += `<div style="border-top:3px solid #000;margin:14px 0;"></div>`;
+  html += `<div style="display:flex;justify-content:space-between;font-weight:bold;font-size:28px;margin-bottom:14px;"><span>รวมสุทธิ</span><span>${totalText} บาท</span></div>`;
   
   // PromptPay QR Code
   if(settings.promptpay && settings.qrCode) {
     const payload = getPromptPayPayload(settings.promptpay, totalAmount);
-    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(payload)}`;
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(payload)}`;
     html += `
-      <div style="text-align:center;margin-top:16px;">
-        <div style="font-size:18px;font-weight:bold;margin-bottom:8px;">ชำระเงินผ่าน QR Code</div>
-        <img src="${qrUrl}" crossorigin="anonymous" style="width:180px;height:180px;">
-        <div style="font-size:16px;margin-top:8px;">พร้อมเพย์: ${settings.promptpay}</div>
+      <div style="text-align:center;margin-top:20px;">
+        <div style="font-size:22px;font-weight:bold;margin-bottom:10px;">ชำระเงินผ่าน QR Code</div>
+        <img src="${qrUrl}" crossorigin="anonymous" style="width:220px;height:220px;">
+        <div style="font-size:20px;margin-top:10px;font-weight:bold;">พร้อมเพย์: ${settings.promptpay}</div>
       </div>
     `;
   }
   
-  html += `<div style="border-top:2px dashed #000;margin:16px 0;"></div>`;
-  html += `<div style="text-align:center;font-size:18px;font-weight:bold;margin-bottom:8px;">${settings.footer}</div>`;
-  html += `<div style="text-align:center;font-size:16px;color:#555;">ขอบคุณที่อุดหนุนครับ/ค่ะ</div>`;
+  html += `<div style="border-top:2px dashed #000;margin:18px 0;"></div>`;
+  html += `<div style="text-align:center;font-size:24px;font-weight:bold;margin-bottom:8px;line-height:1.3;">${settings.footer}</div>`;
   
   const captureArea = document.getElementById('receipt-content-to-capture');
   captureArea.innerHTML = html;
