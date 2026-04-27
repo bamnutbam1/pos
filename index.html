@@ -1,223 +1,2057 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#1a0a00">
+<title>ครัวอ้อยอ้อย - ระบบรับออเดอร์</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&family=Prompt:wght@400;600;700&display=swap" rel="stylesheet">
+<!-- เพิ่ม html2canvas สำหรับแปลงใบเสร็จเป็นรูปภาพ -->
+<script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+<style>
+:root {
+  --gold: #c9a84c;
+  --gold-light: #f0d080;
+  --dark: #0f0600;
+  --dark2: #1a0e04;
+  --dark3: #251508;
+  --card: #1e1005;
+  --card2: #2a1a08;
+  --text: #f5e6c8;
+  --text2: #c8a878;
+  --red: #c0392b;
+  --green: #27ae60;
+  --orange: #e67e22;
+  --border: #4a2e10;
+  --radius: 12px;
+  --shadow: 0 4px 20px rgba(0,0,0,0.6);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+body {
+  font-family: 'Sarabun', sans-serif;
+  background: var(--dark);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+/* ====== TOP NAV ====== */
+.top-nav {
+  position: sticky; top: 0; z-index: 100;
+  background: linear-gradient(135deg, #1a0800, #2d1500);
+  border-bottom: 2px solid var(--gold);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 14px;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.8);
+}
+.shop-name { font-family: 'Prompt', sans-serif; font-size: 16px; font-weight: 700; color: var(--gold); }
+.shop-sub { font-size: 10px; color: var(--text2); }
+.nav-btns { display: flex; gap: 8px; }
+.nav-btn {
+  background: var(--card2); border: 1px solid var(--border);
+  color: var(--text); font-size: 18px; width: 38px; height: 38px;
+  border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s;
+}
+.nav-btn.kitchen-btn {
+  width: auto; padding: 0 10px; font-size: 14px; font-family: 'Prompt', sans-serif;
+  background: linear-gradient(135deg, #2980b9, #1c5982); color: #fff; border: none;
+}
+.nav-btn:active { transform: scale(0.92); background: var(--gold); color: var(--dark); }
+.badge {
+  position: absolute; top: -6px; right: -6px;
+  background: var(--red); color: #fff; font-size: 10px;
+  width: 18px; height: 18px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700;
+}
+.btn-wrap { position: relative; }
 
-Claude finished the response
-You said: จะมีปุ่ม ครัว เราอยากให้เอาออเด้อที่พิมพ์แล้ว ใส่ในหน้านี้แล้วให้มีปุ่มคัดลอก ข้อความออกไปยังคลิบบอร์ด
+/* ====== PAGES ====== */
+.page { display: none; padding: 12px; padding-bottom: 80px; }
+.page.active { display: block; }
 
-<!DOCTYPE html> <html lang="th"> <head> <meta charset="UTF-8"> <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"> <meta name="apple-mobile-web-app-capable" content="yes"> <meta name="theme-color" content="#1a0a00"> <title>ครัวอ้อยอ้อย -
+/* ====== ORDER INPUT ====== */
+.input-section {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 12px; margin-bottom: 12px;
+}
+.section-title {
+  font-family: 'Prompt', sans-serif; font-weight: 600;
+  color: var(--gold); font-size: 14px; margin-bottom: 10px;
+  display: flex; align-items: center; gap: 6px;
+}
+.input-row { display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
+.inp {
+  flex: 1; min-width: 120px;
+  background: var(--dark2); border: 1px solid var(--border);
+  color: var(--text); font-family: 'Sarabun', sans-serif; font-size: 14px;
+  padding: 10px 12px; border-radius: 8px; outline: none;
+  transition: border-color 0.2s;
+}
+.inp:focus { border-color: var(--gold); }
+.inp::placeholder { color: #6b4a28; }
+select.inp { cursor: pointer; }
+.inp-sm { flex: 0 0 80px; }
+.inp-xs { flex: 0 0 60px; }
 
-pasted
+/* Smart Suggest */
+.suggest-box {
+  position: absolute; z-index: 200; left: 0; right: 0; top: 100%;
+  background: var(--card2); border: 1px solid var(--gold);
+  border-radius: 8px; overflow: hidden;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.8);
+  max-height: 220px; overflow-y: auto;
+}
+.suggest-item {
+  padding: 10px 14px; cursor: pointer; font-size: 13px;
+  display: flex; justify-content: space-between; align-items: center;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+.suggest-item:last-child { border-bottom: none; }
+.suggest-item:active, .suggest-item:hover { background: var(--dark3); }
+.suggest-price { color: var(--gold); font-weight: 600; font-size: 12px; }
+.suggest-cat { color: var(--text2); font-size: 11px; }
+.inp-wrap { position: relative; flex: 1; min-width: 120px; }
 
-จะมีปุ่ม ครัว  เราอยากให้เอาออเด้อที่พิมพ์แล้ว  ใส่ในหน้านี้แล้วให้มีปุ่มคัดลอก ข้อความออกไปยังคลิบบอร์ด
+/* ====== ADD BUTTON ====== */
+.add-btn {
+  width: 100%; padding: 12px;
+  background: linear-gradient(135deg, var(--gold), #a07830);
+  color: var(--dark); font-family: 'Prompt', sans-serif; font-weight: 700;
+  font-size: 15px; border: none; border-radius: 8px; cursor: pointer;
+  transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+.add-btn:active { transform: scale(0.97); }
 
-1:48 PM
-Claude responded: ดูโค้ดที่มีอยู่แล้ว จะแก้ส่วนหน้าครัวและฟังก์ชัน renderKitchen() ให้แสดงออเดอร์พร้อมปุ่มคัดลอกครับ
+/* ====== ORDER LIST ====== */
+.order-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); margin-bottom: 8px; overflow: hidden;
+}
+.order-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px; border-bottom: 1px solid var(--border);
+  animation: slideIn 0.2s ease;
+}
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(-10px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+.order-item:last-child { border-bottom: none; }
+.item-name { flex: 1; font-size: 13px; font-weight: 600; }
+.item-note { font-size: 11px; color: var(--text2); }
+.item-type { font-size: 11px; color: var(--orange); }
+.item-qty { 
+  display: flex; align-items: center; gap: 6px;
+  background: var(--dark2); border-radius: 6px; padding: 4px;
+}
+.qty-btn {
+  background: var(--card2); border: 1px solid var(--border);
+  color: var(--text); width: 28px; height: 28px;
+  border-radius: 4px; font-size: 16px; cursor: pointer; font-weight: 700;
+  display: flex; align-items: center; justify-content: center; transition: all 0.15s;
+}
+.qty-btn:active { background: var(--gold); color: var(--dark); }
+.qty-num { font-size: 14px; font-weight: 700; min-width: 22px; text-align: center; }
+.item-price { font-weight: 700; color: var(--gold); font-size: 14px; min-width: 50px; text-align: right; }
+.del-btn {
+  background: rgba(192,57,43,0.2); border: 1px solid rgba(192,57,43,0.4);
+  color: var(--red); width: 28px; height: 28px;
+  border-radius: 4px; cursor: pointer; font-size: 14px;
+  display: flex; align-items: center; justify-content: center; transition: all 0.15s;
+}
+.del-btn:active { background: var(--red); color: #fff; }
 
-วิเคราะห์การแก้ไขหน้าครัวเพื่อแสดงออเด้อและปุ่มคัดลอก
-วิเคราะห์การแก้ไขหน้าครัวเพื่อแสดงออเด้อและปุ่มคัดลอก
-ดูโค้ดที่มีอยู่แล้ว จะแก้ส่วนหน้าครัวและฟังก์ชัน renderKitchen() ให้แสดงออเดอร์พร้อมปุ่มคัดลอกครับ
+/* ====== SUMMARY BAR ====== */
+.summary-bar {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
+  background: linear-gradient(135deg, #1a0800, #2d1500);
+  border-top: 2px solid var(--gold);
+  padding: 10px 14px;
+  display: flex; align-items: center; gap: 10px;
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.6);
+}
+.total-box { flex: 1; }
+.total-label { font-size: 11px; color: var(--text2); }
+.total-amount { font-family: 'Prompt', sans-serif; font-size: 20px; font-weight: 700; color: var(--gold-light); }
+.print-btn {
+  background: linear-gradient(135deg, #2980b9, #1c5982);
+  color: #fff; border: none; border-radius: 8px; padding: 10px 18px;
+  font-family: 'Prompt', sans-serif; font-weight: 700; font-size: 14px;
+  cursor: pointer; transition: all 0.2s;
+  display: flex; align-items: center; gap: 6px; justify-content: center;
+}
+.print-btn:active { transform: scale(0.95); }
+.clear-btn {
+  background: var(--card2); border: 1px solid var(--border);
+  color: var(--text2); border-radius: 8px; padding: 10px 12px;
+  font-size: 14px; cursor: pointer; transition: all 0.2s;
+}
+.clear-btn:active { background: var(--red); color: #fff; }
 
-แก้ไข 2 จุดในไฟล์ HTML:
+/* ====== TABLE INFO ====== */
+.table-row { display: flex; gap: 8px; margin-bottom: 10px; }
+.table-inp { 
+  background: var(--dark2); border: 1px solid var(--gold);
+  color: var(--gold-light); font-family: 'Prompt', sans-serif; font-weight: 700; font-size: 16px;
+  padding: 10px 12px; border-radius: 8px; outline: none; flex: 1; text-align: center;
+}
 
-จุดที่ 1 — HTML หน้าครัว (แทนที่ <div class="page" id="page-kitchen"> ทั้งบล็อก)
+/* ====== MENU BROWSER ====== */
+.cat-tabs {
+  display: flex; gap: 6px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 10px;
+  scrollbar-width: none;
+}
+.cat-tabs::-webkit-scrollbar { display: none; }
+.cat-tab {
+  flex: 0 0 auto; padding: 7px 14px;
+  background: var(--card2); border: 1px solid var(--border);
+  color: var(--text2); border-radius: 20px; font-size: 12px;
+  cursor: pointer; transition: all 0.2s; white-space: nowrap;
+  font-family: 'Sarabun', sans-serif;
+}
+.cat-tab.active {
+  background: var(--gold); color: var(--dark); font-weight: 700; border-color: var(--gold);
+}
+.menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.menu-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 10px; padding: 10px; cursor: pointer;
+  transition: all 0.2s; position: relative; overflow: hidden;
+}
+.menu-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, var(--gold), transparent);
+}
+.menu-card:active { transform: scale(0.96); background: var(--card2); }
+.menu-card-name { font-size: 12px; font-weight: 600; margin-bottom: 4px; }
+.menu-card-cat { font-size: 10px; color: var(--text2); margin-bottom: 6px; }
+.menu-card-price { 
+  font-family: 'Prompt', sans-serif; font-size: 16px; font-weight: 700; color: var(--gold);
+}
+.menu-card-multi { font-size: 10px; color: var(--text2); }
+.add-icon {
+  position: absolute; top: 8px; right: 8px;
+  width: 22px; height: 22px; background: var(--gold);
+  border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  color: var(--dark); font-size: 14px; font-weight: 700;
+}
 
-html
-<!-- KITCHEN PAGE -->
+/* ====== HISTORY ====== */
+.hist-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); margin-bottom: 10px; padding: 12px;
+}
+.hist-header {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  margin-bottom: 8px;
+}
+.hist-table { font-weight: 700; color: var(--gold); font-size: 14px; }
+.hist-time { font-size: 11px; color: var(--text2); }
+.hist-total { font-family: 'Prompt', sans-serif; font-size: 18px; font-weight: 700; color: var(--gold-light); }
+.hist-items { font-size: 12px; color: var(--text2); line-height: 1.8; }
+.hist-actions { display: flex; gap: 6px; margin-top: 10px; }
+.hist-btn {
+  flex: 1; padding: 8px; border-radius: 6px; font-size: 12px;
+  cursor: pointer; border: 1px solid var(--border); background: var(--card2); color: var(--text);
+  font-family: 'Sarabun', sans-serif; transition: all 0.15s;
+}
+.hist-btn:active { background: var(--gold); color: var(--dark); }
+.hist-btn.danger:active { background: var(--red); color: #fff; }
+
+/* ====== SETTINGS ====== */
+.settings-section {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); margin-bottom: 12px; overflow: hidden;
+}
+.settings-header {
+  background: var(--card2); padding: 10px 14px;
+  font-family: 'Prompt', sans-serif; font-weight: 600; font-size: 13px;
+  color: var(--gold); border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 6px;
+}
+.settings-row {
+  padding: 10px 14px; border-bottom: 1px solid var(--border);
+  display: flex; flex-direction: column; gap: 6px;
+}
+.settings-row:last-child { border-bottom: none; }
+.settings-label { font-size: 12px; color: var(--text2); }
+.settings-inp {
+  background: var(--dark2); border: 1px solid var(--border);
+  color: var(--text); font-family: 'Sarabun', sans-serif; font-size: 13px;
+  padding: 8px 10px; border-radius: 6px; outline: none; width: 100%;
+}
+.settings-inp:focus { border-color: var(--gold); }
+.toggle-row {
+  padding: 10px 14px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.toggle-row:last-child { border-bottom: none; }
+.toggle-label { font-size: 13px; }
+.toggle {
+  width: 46px; height: 26px; background: var(--border); border-radius: 13px;
+  position: relative; cursor: pointer; transition: background 0.3s;
+}
+.toggle.on { background: var(--gold); }
+.toggle::after {
+  content: ''; position: absolute; width: 20px; height: 20px;
+  background: #fff; border-radius: 50%; top: 3px; left: 3px;
+  transition: transform 0.3s; box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+}
+.toggle.on::after { transform: translateX(20px); }
+.save-btn {
+  width: 100%; padding: 13px; background: linear-gradient(135deg, var(--gold), #a07830);
+  color: var(--dark); font-family: 'Prompt', sans-serif; font-weight: 700;
+  font-size: 15px; border: none; border-radius: 8px; cursor: pointer;
+  margin-top: 10px; transition: all 0.2s;
+}
+.save-btn:active { transform: scale(0.97); }
+
+/* Menu editor */
+.menu-edit-item {
+  padding: 10px 14px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 8px;
+}
+.menu-edit-item:last-child { border-bottom: none; }
+.menu-edit-name { flex: 1; font-size: 13px; }
+.menu-edit-price { color: var(--gold); font-weight: 700; min-width: 40px; font-size: 13px; }
+.menu-del-btn {
+  background: rgba(192,57,43,0.2); border: 1px solid rgba(192,57,43,0.4);
+  color: var(--red); width: 26px; height: 26px; border-radius: 4px;
+  cursor: pointer; font-size: 13px; display: flex; align-items: center; justify-content: center;
+}
+.add-menu-row { display: flex; gap: 6px; padding: 10px 14px; background: var(--dark3); }
+.add-menu-inp {
+  flex: 1; background: var(--dark2); border: 1px solid var(--border);
+  color: var(--text); padding: 8px 10px; border-radius: 6px; font-family: 'Sarabun'; font-size: 13px; outline: none;
+}
+.add-menu-btn {
+  background: var(--gold); color: var(--dark); border: none; border-radius: 6px;
+  padding: 8px 12px; font-weight: 700; cursor: pointer; font-size: 13px;
+}
+
+/* ====== MODAL PREVIEW ====== */
+.modal-overlay {
+  display: none; position: fixed; inset: 0; z-index: 500;
+  background: rgba(0,0,0,0.85); align-items: center; justify-content: center;
+  padding: 16px;
+}
+.modal-overlay.open { display: flex; }
+.modal-box {
+  background: var(--dark2); border: 1px solid var(--gold);
+  border-radius: 16px; padding: 20px; width: 100%; max-width: 360px;
+  max-height: 90vh; overflow-y: auto; position: relative;
+  animation: zoomIn 0.2s ease;
+}
+@keyframes zoomIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.modal-title {
+  font-family: 'Prompt', sans-serif; font-size: 16px; font-weight: 700;
+  color: var(--gold); margin-bottom: 14px; text-align: center;
+}
+.modal-close {
+  position: absolute; top: 14px; right: 14px;
+  background: var(--card2); border: 1px solid var(--border);
+  color: var(--text); width: 32px; height: 32px; border-radius: 8px;
+  cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center;
+}
+.preview-img-container {
+  text-align: center;
+  background: #f0f0f0;
+  padding: 10px;
+  border-radius: 4px;
+  max-height: 50vh;
+  overflow-y: auto;
+}
+.preview-img-container img {
+  max-width: 100%;
+  height: auto;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+/* ซ่อนพื้นที่สำหรับแปลงภาพ (ห้ามเปลี่ยนความกว้าง 384px เด็ดขาด) */
+#receipt-capture-area {
+  position: absolute;
+  top: -9999px;
+  left: -9999px;
+}
+.receipt-preview {
+  background: #fff; 
+  color: #000; 
+  font-family: 'Sarabun', sans-serif;
+  padding: 16px; 
+  font-size: 14px; 
+  line-height: 1.6;
+  width: 384px; /* ความกว้างมาตรฐานเป๊ะๆ สำหรับเครื่องพิมพ์ 58mm (ห้ามแก้) */
+  box-sizing: border-box;
+  margin: 0;
+}
+
+/* ====== KITCHEN UI (ปรับใหม่หมดให้ใหญ่เบ้อเริ่ม) ====== */
+.kitchen-card {
+  background: var(--card2);
+  border: 2px solid var(--gold);
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 20px;
+  position: relative;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.8);
+  animation: slideIn 0.3s ease;
+}
+.kitchen-emoji {
+  font-size: 64px;
+  line-height: 1.2;
+  text-align: center;
+  margin-bottom: 10px;
+}
+.kitchen-qty {
+  font-size: 42px;
+  font-weight: bold;
+  color: var(--gold-light);
+  text-align: center;
+  font-family: 'Prompt', sans-serif;
+}
+.kitchen-btn-group {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+}
+.kitchen-btn-giant {
+  flex: 1;
+  padding: 18px 10px;
+  font-size: 20px;
+  font-family: 'Prompt', sans-serif;
+  font-weight: bold;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.1s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.kitchen-btn-giant:active { transform: scale(0.95); }
+
+/* ====== RECEIPT PRINT (Fallback) ====== */
+@media print {
+  body > *:not(#receipt-print) { display: none !important; }
+  #receipt-print {
+    display: block !important;
+    position: fixed; top: 0; left: 0; width: 58mm;
+    font-family: 'Courier New', monospace; font-size: 10px;
+    color: #000 !important; background: #fff !important;
+    padding: 4mm; margin: 0;
+  }
+}
+#receipt-print {
+  display: none;
+  font-family: 'Courier New', monospace; font-size: 11px; color: #222;
+  line-height: 1.5;
+}
+
+/* ====== BOTTOM NAV ====== */
+.bottom-nav {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 99;
+  background: var(--dark2); border-top: 1px solid var(--border);
+  display: flex; justify-content: space-around;
+}
+.bottom-tab {
+  flex: 1; padding: 10px 4px 8px;
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  cursor: pointer; transition: all 0.2s; border: none; background: transparent;
+  color: var(--text2); font-family: 'Sarabun', sans-serif; font-size: 10px;
+}
+.bottom-tab .tab-icon { font-size: 20px; }
+.bottom-tab.active { color: var(--gold); }
+.bottom-tab.active .tab-icon { transform: translateY(-2px); }
+
+/* Toast */
+.toast {
+  position: fixed; top: 70px; left: 50%; transform: translateX(-50%);
+  background: var(--green); color: #fff; padding: 10px 20px;
+  border-radius: 20px; font-size: 13px; font-weight: 600; z-index: 9999;
+  opacity: 0; transition: opacity 0.3s; pointer-events: none;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+}
+.toast.show { opacity: 1; }
+.toast.error { background: var(--red); }
+
+/* Empty state */
+.empty-state {
+  text-align: center; padding: 40px 20px; color: var(--text2);
+}
+.empty-icon { font-size: 48px; margin-bottom: 10px; }
+.empty-text { font-size: 14px; }
+
+/* Chips */
+.chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+.chip {
+  padding: 4px 10px; border-radius: 12px; font-size: 11px;
+  background: var(--card2); border: 1px solid var(--border); cursor: pointer;
+  transition: all 0.15s;
+}
+.chip.active { background: var(--gold); color: var(--dark); border-color: var(--gold); font-weight: 700; }
+.chip:active { transform: scale(0.95); }
+
+.tag-row { display: flex; gap: 4px; flex-wrap: wrap; align-items: center; margin-bottom: 8px; }
+.tag { 
+  background: var(--dark3); border: 1px solid var(--border);
+  color: var(--text2); font-size: 10px; padding: 2px 8px; border-radius: 10px;
+}
+
+/* Sheet status */
+.sheet-status {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 11px; padding: 4px 10px; border-radius: 10px;
+}
+.sheet-status.ok { background: rgba(39,174,96,0.2); color: var(--green); border: 1px solid rgba(39,174,96,0.3); }
+.sheet-status.err { background: rgba(192,57,43,0.2); color: var(--red); border: 1px solid rgba(192,57,43,0.4); }
+.sheet-status.pending { background: rgba(230,126,34,0.2); color: var(--orange); border: 1px solid rgba(230,126,34,0.3); }
+
+.channel-btn {
+  flex: 1; padding: 10px 6px;
+  background: var(--card2); border: 1px solid var(--border);
+  color: var(--text2); border-radius: 8px; font-size: 13px;
+  font-family: 'Sarabun', sans-serif; cursor: pointer; transition: all 0.2s;
+  font-weight: 600;
+}
+.channel-btn.active {
+  background: linear-gradient(135deg, var(--gold), #a07830);
+  color: var(--dark); border-color: var(--gold);
+}
+.channel-btn:active { transform: scale(0.95); }
+
+.discount-row { display: flex; gap: 8px; align-items: center; }
+.discount-val { 
+  font-family: 'Prompt', sans-serif; font-size: 14px; font-weight: 700;
+}
+</style>
+</head>
+<body>
+
+<!-- TOP NAV -->
+<div class="top-nav">
+  <div>
+    <div class="shop-name">🍳 ครัวอ้อยอ้อย</div>
+    <div class="shop-sub" id="nav-sub">โทร. 080-9650875</div>
+  </div>
+  <div class="nav-btns">
+    <!-- ปุ่มเข้าครัวด่วน -->
+    <button class="nav-btn kitchen-btn" onclick="showPage('kitchen')">👨‍🍳 ครัว</button>
+    <div class="btn-wrap">
+      <button class="nav-btn" onclick="showPage('cart')">🛒
+        <span class="badge" id="cart-badge" style="display:none">0</span>
+      </button>
+    </div>
+    <button class="nav-btn" onclick="showPage('settings')">⚙️</button>
+  </div>
+</div>
+
+<!-- PAGES -->
+<!-- ORDER PAGE -->
+<div class="page active" id="page-order">
+  <div class="input-section">
+    <div class="section-title">📲 ช่องทางสั่ง &amp; ลูกค้า</div>
+    <div style="display:flex;gap:8px;margin-bottom:10px">
+      <button class="channel-btn active" id="ch-line" onclick="setChannel('line',this)">💬 ไลน์</button>
+      <button class="channel-btn" id="ch-phone" onclick="setChannel('phone',this)">📞 โทรศัพท์</button>
+      <button class="channel-btn" id="ch-walkin" onclick="setChannel('walkin',this)">🏪 หน้าร้าน</button>
+    </div>
+    <input class="table-inp" id="customer-name" placeholder="ชื่อ / เบอร์ลูกค้า" type="text" style="width:100%;font-size:14px">
+  </div>
+
+  <div class="input-section">
+    <div class="section-title">✏️ พิมพ์ / วางออเดอร์</div>
+    <div class="input-row">
+      <div class="inp-wrap">
+        <input class="inp" id="item-search" placeholder="ชื่อเมนู..." autocomplete="off" 
+          oninput="onMenuSearch(this.value)" onpaste="handlePaste(event)">
+        <div class="suggest-box" id="suggest-box" style="display:none"></div>
+      </div>
+    </div>
+    <div class="input-row" id="type-row" style="display:none">
+      <div class="chips" id="type-chips"></div>
+    </div>
+    <div class="input-row">
+      <input class="inp inp-xs" id="item-qty" type="number" value="1" min="1" placeholder="จำนวน">
+      <input class="inp" id="item-note" placeholder="หมายเหตุ (เช่น เผ็ดน้อย...)" type="text">
+    </div>
+    <div class="input-row" style="align-items: center;">
+      <input class="inp inp-sm" id="item-price" type="number" placeholder="ราคา" step="5">
+      <div class="chip" id="chip-special" onclick="toggleItemSpecial()">⭐ พิเศษ (+10)</div>
+      <div style="flex:1">
+        <div class="tag-row" id="recent-tags"></div>
+      </div>
+    </div>
+    <button class="add-btn" onclick="addItem()">➕ เพิ่มรายการ</button>
+  </div>
+
+  <!-- paste preview -->
+  <div id="paste-preview" style="display:none">
+    <div class="input-section">
+      <div class="section-title">📋 รายการจากคลิปบอร์ด</div>
+      <div id="paste-items"></div>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button class="add-btn" style="background:linear-gradient(135deg,var(--green),#1a7a40)" onclick="confirmPaste()">✅ เพิ่มทั้งหมด</button>
+        <button class="add-btn" style="background:var(--card2);color:var(--text)" onclick="cancelPaste()">❌ ยกเลิก</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Order list -->
+  <div id="order-list">
+    <div class="empty-state">
+      <div class="empty-icon">🍽️</div>
+      <div class="empty-text">ยังไม่มีรายการ<br>พิมพ์หรือวางออเดอร์เพื่อเริ่มต้น</div>
+    </div>
+  </div>
+</div>
+
+<!-- MENU BROWSER PAGE -->
+<div class="page" id="page-menu">
+  <div class="cat-tabs" id="cat-tabs"></div>
+  <div class="menu-grid" id="menu-grid"></div>
+</div>
+
+<!-- KITCHEN PAGE (หน้าจอคิวแม่ครัวใหญ่พิเศษ) -->
 <div class="page" id="page-kitchen">
   <div class="input-section" style="border:none; background:transparent; padding:0;">
     <div class="section-title" style="justify-content:space-between; font-size:18px;">
-      <span>👨‍🍳 คิวอาหาร</span>
+      <span>👨‍🍳 คิวอาหาร (แตะเพื่อฟัง)</span>
+      <!-- สวิตช์เปิดปิดการอ่านอัตโนมัติ -->
       <div style="display:flex; align-items:center; gap:8px;">
         <span style="font-size:12px; color:var(--text2);">อ่าน Auto</span>
         <div class="toggle" id="auto-speak-toggle" onclick="toggleAutoSpeak(this)"></div>
       </div>
     </div>
-
-    <!-- ปุ่มคัดลอกทั้งหมด -->
-    <button id="copy-all-btn" onclick="copyAllOrders()"
-      style="width:100%;margin:12px 0 4px;padding:13px;background:linear-gradient(135deg,#1a5276,#0d2d45);
-             color:#fff;border:none;border-radius:10px;font-family:'Prompt',sans-serif;
-             font-size:15px;font-weight:700;cursor:pointer;display:flex;align-items:center;
-             justify-content:center;gap:8px;">
-      📋 คัดลอกออเดอร์ทั้งหมด
-    </button>
-
+    
     <!-- รายการอาหารรอทำ -->
-    <div id="kitchen-items" style="margin-top:12px;"></div>
+    <div id="kitchen-items" style="margin-top:16px;"></div>
+    
   </div>
 </div>
-จุดที่ 2 — JavaScript ฟังก์ชัน renderKitchen() (หาฟังก์ชันเดิมในโค้ด JS แล้วแทนที่ด้วยอันนี้)
 
-javascript
-function renderKitchen() {
-  const container = document.getElementById('kitchen-items');
-  const copyAllBtn = document.getElementById('copy-all-btn');
+<!-- CART / RECEIPT PAGE -->
+<div class="page" id="page-cart">
+  <div class="input-section">
+    <div class="section-title">🧾 ใบเสร็จ / พริ้นกระดาษ</div>
+    <div class="table-row">
+      <div style="flex:1">
+        <div class="settings-label">ช่องทาง: <strong id="rcpt-table">-</strong></div>
+        <div class="settings-label">ลูกค้า: <strong id="rcpt-customer">-</strong></div>
+      </div>
+      <div>
+        <div class="settings-label">เวลา: <strong id="rcpt-time">-</strong></div>
+        <div class="settings-label">ออเดอร์: <strong id="rcpt-id">-</strong></div>
+      </div>
+    </div>
+  </div>
 
-  if (!orderItems || orderItems.length === 0) {
-    container.innerHTML = `
-      <div class="empty-state">
-        <div class="empty-icon">🍽️</div>
-        <div class="empty-text">ยังไม่มีออเดอร์ในคิว<br>รับออเดอร์ที่หน้า "รับออเดอร์" ก่อนนะคะ</div>
-      </div>`;
-    if (copyAllBtn) copyAllBtn.style.display = 'none';
-    return;
-  }
+  <div class="input-section">
+    <div class="section-title">💰 สรุปยอด</div>
+    <div id="rcpt-items" style="margin-bottom:10px"></div>
+    <div class="receipt-line" style="border-top:1px solid var(--border)"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0">
+      <span style="color:var(--text2)">ยอดรวม</span>
+      <span style="font-size:18px;font-weight:700;color:var(--gold-light)" id="rcpt-subtotal">฿0</span>
+    </div>
+    
+    <!-- ส่วนลด -->
+    <div class="discount-row" style="margin-bottom:8px">
+      <span style="color:var(--text2);font-size:13px">ส่วนลด</span>
+      <input class="inp inp-xs" id="discount-inp" type="number" value="0" min="0" placeholder="0" style="width:70px" oninput="calcTotal()">
+      <span style="color:var(--text2);font-size:13px">บาท</span>
+      <span class="discount-val" id="discount-show" style="color:var(--red);"></span>
+    </div>
 
-  if (copyAllBtn) copyAllBtn.style.display = 'flex';
+    <!-- ช่องจ่ายเพิ่ม -->
+    <div class="discount-row" style="margin-bottom:8px">
+      <span style="color:var(--text2);font-size:13px">จ่ายเพิ่ม</span>
+      <input class="inp inp-xs" id="extra-inp" type="number" value="0" min="0" placeholder="0" style="width:70px" oninput="calcTotal()">
+      <span style="color:var(--text2);font-size:13px">บาท</span>
+      <span class="discount-val" id="extra-show" style="color:var(--green);"></span>
+    </div>
 
-  // สร้างข้อมูลลูกค้า/ช่องทาง
-  const customerName = document.getElementById('customer-name')?.value || '';
-  const channelMap = { line: '💬 ไลน์', phone: '📞 โทรศัพท์', walkin: '🏪 หน้าร้าน' };
-  const channelLabel = channelMap[selectedChannel] || selectedChannel;
+    <div class="receipt-line" style="border-top:2px solid var(--gold);margin-top:8px"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0">
+      <span style="font-size:16px;font-weight:700">ยอดสุทธิ</span>
+      <span style="font-family:'Prompt';font-size:24px;font-weight:700;color:var(--gold-light)" id="rcpt-total">฿0</span>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0">
+      <span style="color:var(--text2);font-size:13px">รับเงิน</span>
+      <input class="inp" id="cash-inp" type="number" placeholder="ใส่จำนวนเงิน" style="width:130px;text-align:right" oninput="calcChange()">
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0">
+      <span style="color:var(--text2);font-size:13px">เงินทอน</span>
+      <span style="font-size:18px;font-weight:700;color:var(--green)" id="change-show">-</span>
+    </div>
+  </div>
 
-  container.innerHTML = orderItems.map((item, idx) => {
-    // สร้างข้อความสำหรับคัดลอกรายการนี้
-    const copyText = buildItemCopyText(item, idx + 1);
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+    <button class="print-btn" onclick="showPreview()" style="border-radius:8px;width:100%">👁️ ดูตัวอย่าง & พริ้น</button>
+    <button class="add-btn" onclick="saveOrder()" style="background:linear-gradient(135deg,var(--green),#1a7a40)">💾 บันทึกส่งครัว</button>
+  </div>
+  <button class="add-btn" onclick="saveToSheet()" style="background:linear-gradient(135deg,#1a5276,#0d2d45);margin-bottom:8px">
+    📊 บันทึกลง Google Sheet
+  </button>
+  <div id="sheet-status-row" style="text-align:center;margin-top:4px"></div>
+</div>
 
-    return `
-      <div class="kitchen-card" style="margin-bottom:16px;">
-        <!-- หัวการ์ด: ลำดับ + ปุ่มคัดลอก -->
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-          <div style="background:var(--gold);color:var(--dark);border-radius:20px;
-                      padding:3px 12px;font-size:13px;font-weight:700;font-family:'Prompt',sans-serif;">
-            #${idx + 1}
-          </div>
-          <button onclick="copyOneItem(${idx})"
-            style="background:var(--card2);border:1px solid var(--border);color:var(--text2);
-                   border-radius:8px;padding:6px 14px;font-size:13px;cursor:pointer;
-                   font-family:'Sarabun',sans-serif;display:flex;align-items:center;gap:5px;">
-            📋 คัดลอก
-          </button>
-        </div>
+<!-- HISTORY PAGE -->
+<div class="page" id="page-history">
+  <div id="history-list">
+    <div class="empty-state">
+      <div class="empty-icon">📜</div>
+      <div class="empty-text">ยังไม่มีประวัติออเดอร์</div>
+    </div>
+  </div>
+</div>
 
-        <!-- ชื่อเมนู -->
-        <div style="font-family:'Prompt',sans-serif;font-size:26px;font-weight:700;
-                    color:var(--text);text-align:center;margin-bottom:4px;line-height:1.3;">
-          ${item.name}${item.type ? ' <span style="color:var(--orange);font-size:20px;">('+item.type+')</span>' : ''}
-        </div>
+<!-- SETTINGS PAGE -->
+<div class="page" id="page-settings">
 
-        <!-- จำนวน -->
-        <div class="kitchen-qty" style="font-size:52px;color:var(--gold-light);margin:4px 0;">
-          × ${item.qty}
-        </div>
+  <div class="settings-section">
+    <div class="settings-header">🏪 ตั้งค่าร้าน</div>
+    <div class="settings-row"><div class="settings-label">โลโก้ร้าน (ลิงก์รูปภาพ URL)</div><input class="settings-inp" id="s-logourl" placeholder="https://ลิงก์รูปภาพของคุณ.jpg"></div>
+    <div class="settings-row"><div class="settings-label">ชื่อร้าน</div><input class="settings-inp" id="s-shopname" value="ครัวอ้อยอ้อย"></div>
+    <div class="settings-row"><div class="settings-label">เบอร์โทร</div><input class="settings-inp" id="s-phone" value="080-9650875"></div>
+    <div class="settings-row"><div class="settings-label">Line ID</div><input class="settings-inp" id="s-line" value="OIlshop2024"></div>
+    <div class="settings-row"><div class="settings-label">ที่อยู่ / คำอวยพร (พริ้นท้ายบิล)</div><input class="settings-inp" id="s-footer" value="ขอบคุณที่ใช้บริการ 🙏 ส่งฟรี 2 กม."></div>
+  </div>
 
-        <!-- หมายเหตุ -->
-        ${item.note ? `
-          <div style="background:rgba(230,126,34,0.15);border:1px solid rgba(230,126,34,0.4);
-                      border-radius:8px;padding:8px 12px;margin-top:8px;text-align:center;
-                      color:var(--orange);font-size:16px;">
-            📝 ${item.note}
-          </div>` : ''}
+  <div class="settings-section">
+    <div class="settings-header">📊 Google Sheet</div>
+    <div class="settings-row">
+      <div class="settings-label">Google Sheet URL (Apps Script)</div>
+      <input class="settings-inp" id="s-sheet-url" placeholder="https://script.google.com/macros/s/...">
+    </div>
+    <div class="settings-row">
+      <div class="settings-label">Sheet Name</div>
+      <input class="settings-inp" id="s-sheet-name" value="Orders" placeholder="Orders">
+    </div>
+    <div class="toggle-row">
+      <span class="toggle-label">บันทึก Sheet อัตโนมัติหลังพริ้น</span>
+      <div class="toggle" id="auto-sheet-toggle" onclick="this.classList.toggle('on')"></div>
+    </div>
+  </div>
 
-        <!-- ราคา -->
-        <div style="text-align:right;color:var(--gold);font-size:18px;font-weight:700;
-                    margin-top:10px;font-family:'Prompt',sans-serif;">
-          ฿${item.price * item.qty}
-        </div>
-      </div>`;
+  <div class="settings-section">
+    <div class="settings-header">🖨️ ตั้งค่าพริ้น</div>
+    <div class="toggle-row">
+      <span class="toggle-label">แสดง QR Code ท้ายบิล</span>
+      <div class="toggle on" id="qr-toggle" onclick="this.classList.toggle('on')"></div>
+    </div>
+    <div class="toggle-row">
+      <span class="toggle-label">แสดงลำดับรายการ</span>
+      <div class="toggle on" id="num-toggle" onclick="this.classList.toggle('on')"></div>
+    </div>
+    <div class="settings-row">
+      <div class="settings-label">PromptPay เลข (แสดงบนบิล)</div>
+      <input class="settings-inp" id="s-promptpay" placeholder="080-9650875">
+    </div>
+  </div>
+
+  <div class="settings-section">
+    <div class="settings-header">📡 เครื่องพิมพ์บูลทูธ 58mm</div>
+    <div class="settings-row">
+      <div class="settings-label" style="margin-bottom:6px">เชื่อมต่อเครื่องพิมพ์ความร้อน 58mm ผ่าน Bluetooth</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="add-btn" onclick="connectBluetooth()" id="bt-connect-btn" style="flex:1;font-size:13px;padding:10px">
+          📡 เชื่อมต่อ Bluetooth
+        </button>
+        <button class="add-btn" onclick="disconnectBluetooth()" id="bt-disconnect-btn" style="flex:1;font-size:13px;padding:10px;display:none;background:linear-gradient(135deg,var(--red),#8b1a10)">
+          ❌ ตัดการเชื่อมต่อ
+        </button>
+      </div>
+      <div id="bt-status" style="margin-top:8px;font-size:12px;color:var(--text2);text-align:center">
+        ⚪ ยังไม่ได้เชื่อมต่อ
+      </div>
+    </div>
+    <div class="settings-row" style="background:rgba(201,168,76,0.06);border-radius:8px">
+      <div class="settings-label" style="color:var(--gold);font-size:11px;line-height:1.8">
+        💡 <strong>วิธีใช้:</strong><br>
+        1. เปิด Bluetooth บนมือถือ<br>
+        2. เปิดเครื่องพิมพ์ 58mm<br>
+        3. กด "เชื่อมต่อ Bluetooth" แล้วเลือกเครื่องพิมพ์<br>
+        4. กลับไปที่หน้า "ใบเสร็จ" แล้วกดปุ่มพริ้นได้เลย
+      </div>
+    </div>
+  </div>
+
+  <div class="settings-section">
+    <div class="settings-header">📋 จัดการเมนู</div>
+    <div id="menu-cat-list"></div>
+    <div style="padding:10px 14px">
+      <select class="settings-inp" id="new-menu-cat">
+        <option value="แนะนำ">เมนูแนะนำ</option>
+        <option value="จานด่วน">จานด่วน</option>
+        <option value="อื่นๆ">อื่นๆ</option>
+      </select>
+    </div>
+    <div class="add-menu-row">
+      <input class="add-menu-inp" id="new-menu-name" placeholder="ชื่อเมนูใหม่">
+      <input class="add-menu-inp" id="new-menu-price" type="number" placeholder="ราคา" style="width:70px">
+      <button class="add-menu-btn" onclick="addMenuManual()">+</button>
+    </div>
+  </div>
+
+  <button class="save-btn" onclick="saveSettings()">💾 บันทึกการตั้งค่า</button>
+</div>
+
+<!-- PREVIEW MODAL -->
+<div id="preview-modal" class="modal-overlay">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closePreview()">✕</button>
+    <div class="modal-title" id="preview-modal-title">👁️ ตัวอย่างใบเสร็จ</div>
+    <div id="preview-content" class="preview-img-container"></div>
+    <div style="display:flex;gap:8px;margin-top:16px;">
+      <button class="print-btn" style="flex:1; justify-content:center; padding:14px; border-radius:8px;" onclick="executePrintImage()">
+        🖨️ พิมพ์ออกเครื่อง Bluetooth
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Hidden Canvas For Generating Image -->
+<div id="receipt-capture-area">
+  <div id="receipt-content-to-capture" class="receipt-preview"></div>
+</div>
+
+<!-- BOTTOM NAV -->
+<div class="bottom-nav">
+  <button class="bottom-tab active" id="tab-order" onclick="showPage('order')">
+    <span class="tab-icon">✏️</span>รับออเดอร์
+  </button>
+  <button class="bottom-tab" id="tab-menu" onclick="showPage('menu')">
+    <span class="tab-icon">📖</span>เมนู
+  </button>
+  <button class="bottom-tab" id="tab-cart" onclick="showPage('cart')">
+    <span class="tab-icon">🧾</span>ใบเสร็จ
+  </button>
+  <button class="bottom-tab" id="tab-history" onclick="showPage('history')">
+    <span class="tab-icon">📜</span>ประวัติ
+  </button>
+  <button class="bottom-tab" id="tab-settings" onclick="showPage('settings')">
+    <span class="tab-icon">⚙️</span>ตั้งค่า
+  </button>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- Receipt Print Area (Fallback) -->
+<div id="receipt-print"></div>
+
+<script>
+// ============================================================
+// DATA
+// ============================================================
+let settings = {
+  shopname: 'ครัวอ้อยอ้อย',
+  phone: '080-9650875',
+  line: 'OIlshop2024',
+  footer: 'ขอบคุณที่ใช้บริการ 🙏 ส่งฟรี 2 กม.',
+  sheetUrl: '',
+  sheetName: 'Orders',
+  promptpay: '0809650875',
+  autoSheet: false,
+  qrCode: true,
+  showNum: true,
+  logoUrl: '',
+  autoSpeak: true // เริ่มต้นเปิดให้อ่านออกเสียงเข้าครัวทันที
+};
+
+// Menu data from image
+let menuData = [
+  // แนะนำ
+  { id:1, name:'กะเพราหมูกรอบ', price:65, cat:'แนะนำ', types:[] },
+  { id:2, name:'กะเพราทะเล', price:65, cat:'แนะนำ', types:[] },
+  { id:3, name:'กะเพราเนื้อ', price:60, cat:'แนะนำ', types:[] },
+  { id:4, name:'หมูกระเทียม', price:50, cat:'แนะนำ', types:[] },
+  { id:5, name:'ผัดผงกะหรี่ทะเล', price:65, cat:'แนะนำ', types:[] },
+  { id:6, name:'ผัดฉ่าทะเล', price:65, cat:'แนะนำ', types:[] },
+  { id:7, name:'คะน้าปลากะป๋อง', price:55, cat:'แนะนำ', types:[] },
+  { id:8, name:'ผัดคะน้าหมูกรอบ', price:60, cat:'แนะนำ', types:[] },
+  { id:9, name:'ผักบุ้งหมูกรอบ', price:60, cat:'แนะนำ', types:[] },
+  { id:10, name:'ข้าวไข่เจียวหมูสับ', price:40, cat:'แนะนำ', types:[] },
+  { id:11, name:'ข้าวไข่เจียวทรงเครื่อง', price:40, cat:'แนะนำ', types:[] },
+  { id:12, name:'หมูกรอบคั่วพริกเกลือ', price:65, cat:'แนะนำ', types:[] },
+  { id:13, name:'คอกหอมผัดตับ', price:55, cat:'แนะนำ', types:[] },
+  { id:14, name:'กะเพราปลาดุก', price:55, cat:'แนะนำ', types:[] },
+  // จานด่วน
+  { id:20, name:'ผัดกะเพรา', price:65, cat:'จานด่วน', types:['หมูกรอบ','หมู','ไก่','เนื้อ','ตับ','ทะเล'], prices:{หมูกรอบ:65,หมู:50,ไก่:50,เนื้อ:60,ตับ:55,ทะเล:65} },
+  { id:21, name:'ผัดพริกแกง', price:60, cat:'จานด่วน', types:['หมูกรอบ','หมู','ไก่','เนื้อ','ตับ','ทะเล'], prices:{หมูกรอบ:60,หมู:50,ไก่:50,เนื้อ:60,ตับ:55,ทะเล:65}, sub:'ถั่วฝักยาว/หน่อไม้ดอง' },
+  { id:22, name:'ข้าวราดทอดกระเทียม', price:65, cat:'จานด่วน', types:['หมูกรอบ','หมู','ไก่','เนื้อ','ตับ','ทะเล'], prices:{หมูกรอบ:65,หมู:50,ไก่:50,เนื้อ:60,ตับ:55,ทะเล:65} },
+  { id:23, name:'ผัดผัก', price:60, cat:'จานด่วน', types:['หมูกรอบ','หมู','ไก่','เนื้อ','ตับ'], prices:{หมูกรอบ:60,หมู:50,ไก่:50,เนื้อ:60,ตับ:55}, sub:'คะน้า/ผักบุ้ง/ผักกาดขาว/สั้วฝักยาว/คอกหอม' },
+  // อื่นๆ
+  { id:30, name:'ข้าวไข่เจียวหมูสับ', price:40, cat:'อื่นๆ', types:[] },
+  { id:31, name:'ข้าวไข่เจียวทรงเครื่อง', price:40, cat:'อื่นๆ', types:[] },
+  { id:32, name:'ข้าวไข่เจียว 2 ฟอง', price:30, cat:'อื่นๆ', types:[] },
+  { id:33, name:'ข้าวไข่ตาว 2 ฟอง', price:30, cat:'อื่นๆ', types:[] },
+  { id:34, name:'ข้าวเปล่า', price:10, cat:'อื่นๆ', types:[] },
+  { id:35, name:'สุกี้น้ำ/แห้ง หมู/ไก่', price:55, cat:'อื่นๆ', types:[] },
+  { id:36, name:'สุกี้น้ำ/แห้ง ทะเล', price:65, cat:'อื่นๆ', types:[] },
+];
+
+let orderItems = [];
+let history = [];
+let orderIdCounter = 1;
+let selectedMenuId = null;
+let selectedType = null;
+let pasteQueue = [];
+let recentMenus = [];
+let printImageCanvas = null;
+
+// Load from localStorage
+function loadStorage() {
+  try {
+    const s = localStorage.getItem('kraow_settings');
+    if (s) settings = {...settings, ...JSON.parse(s)};
+    const m = localStorage.getItem('kraow_menu');
+    if (m) menuData = JSON.parse(m);
+    const h = localStorage.getItem('kraow_history');
+    if (h) history = JSON.parse(h);
+    const id = localStorage.getItem('kraow_orderid');
+    if (id) orderIdCounter = parseInt(id);
+    const r = localStorage.getItem('kraow_recent');
+    if (r) recentMenus = JSON.parse(r);
+  } catch(e){}
+  
+  if(settings.autoSpeak) document.getElementById('auto-speak-toggle')?.classList.add('on');
+}
+function saveStorage() {
+  try {
+    localStorage.setItem('kraow_settings', JSON.stringify(settings));
+    localStorage.setItem('kraow_menu', JSON.stringify(menuData));
+    localStorage.setItem('kraow_history', JSON.stringify(history));
+    localStorage.setItem('kraow_orderid', orderIdCounter);
+    localStorage.setItem('kraow_recent', JSON.stringify(recentMenus));
+  } catch(e){}
+}
+
+let selectedChannel = 'line'; // default
+
+function setChannel(ch, el) {
+  selectedChannel = ch;
+  document.querySelectorAll('.channel-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// ============================================================
+// PAGES
+// ============================================================
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.bottom-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  const tab = document.getElementById('tab-'+name);
+  if(tab) tab.classList.add('active');
+  if(name==='menu') renderMenuBrowser();
+  if(name==='history') renderHistory();
+  if(name==='settings') renderSettings();
+  if(name==='cart') renderReceipt();
+  if(name==='kitchen') renderKitchen();
+}
+
+// ============================================================
+// SEARCH & SUGGEST
+// ============================================================
+function onMenuSearch(val) {
+  selectedMenuId = null; selectedType = null;
+  document.getElementById('type-row').style.display = 'none';
+  if(!val || val.length < 1) { hideSuggest(); return; }
+  const q = val.toLowerCase();
+  const matches = menuData.filter(m => 
+    m.name.toLowerCase().includes(q) || 
+    (m.cat && m.cat.includes(q)) ||
+    (m.sub && m.sub.includes(q))
+  ).slice(0,8);
+  showSuggest(matches, val);
+}
+
+function showSuggest(items, q) {
+  const box = document.getElementById('suggest-box');
+  if(!items.length){ box.style.display='none'; return; }
+  box.innerHTML = items.map(m => {
+    let priceStr = m.types && m.types.length > 0 
+      ? Object.values(m.prices||{}).join('/') 
+      : m.price;
+    return `<div class="suggest-item" onclick="selectMenu(${m.id})">
+      <div>
+        <div>${highlight(m.name, q)}</div>
+        <div class="suggest-cat">${m.cat}${m.sub?` · ${m.sub}`:''}</div>
+      </div>
+      <span class="suggest-price">฿${priceStr}</span>
+    </div>`;
   }).join('');
+  box.style.display = 'block';
+}
+function highlight(text, q) {
+  if(!q) return text;
+  const idx = text.toLowerCase().indexOf(q.toLowerCase());
+  if(idx<0) return text;
+  return text.slice(0,idx) + `<strong style="color:var(--gold)">${text.slice(idx,idx+q.length)}</strong>` + text.slice(idx+q.length);
+}
+function hideSuggest() {
+  document.getElementById('suggest-box').style.display = 'none';
+}
 
-  // ถ้าเปิด autoSpeak ให้อ่านออเดอร์ล่าสุด
-  if (settings.autoSpeak && orderItems.length > 0) {
-    const last = orderItems[orderItems.length - 1];
-    speakItem(last);
+function selectMenu(id) {
+  const m = menuData.find(x=>x.id===id);
+  if(!m) return;
+  selectedMenuId = id;
+  document.getElementById('item-search').value = m.name;
+  
+  // ยกเลิกการเลือก "พิเศษ" ตอนเปลี่ยนเมนู
+  document.getElementById('chip-special')?.classList.remove('active');
+  
+  hideSuggest();
+  // Show type selector if has types
+  if(m.types && m.types.length > 0) {
+    document.getElementById('type-row').style.display = 'flex';
+    renderTypeChips(m);
+    document.getElementById('item-price').value = '';
+  } else {
+    document.getElementById('type-row').style.display = 'none';
+    document.getElementById('item-price').value = m.price;
+    selectedType = null;
+  }
+  document.getElementById('item-qty').focus();
+}
+
+function renderTypeChips(m) {
+  const chips = document.getElementById('type-chips');
+  chips.innerHTML = (m.types||[]).map(t => 
+    `<div class="chip" onclick="selectType('${t}',${m.id})">${t}</div>`
+  ).join('');
+}
+function selectType(type, mid) {
+  selectedType = type;
+  const m = menuData.find(x=>x.id===mid);
+  
+  let newPrice = m.price;
+  if(m && m.prices && m.prices[type]) {
+    newPrice = m.prices[type];
+  }
+  
+  const isSpecial = document.getElementById('chip-special')?.classList.contains('active');
+  if (isSpecial) newPrice += 10;
+  
+  document.getElementById('item-price').value = newPrice;
+  
+  document.querySelectorAll('.chip').forEach(c => {
+    if(c.id !== 'chip-special') {
+        c.classList.toggle('active', c.textContent===type);
+    }
+  });
+}
+
+// ปุ่มเปิด/ปิดความพิเศษ +10 ในหน้าหลักรับออเดอร์
+function toggleItemSpecial() {
+  const chip = document.getElementById('chip-special');
+  const priceInp = document.getElementById('item-price');
+  const noteInp = document.getElementById('item-note');
+  let p = parseFloat(priceInp.value);
+  
+  chip.classList.toggle('active');
+  if (chip.classList.contains('active')) {
+    if(!isNaN(p)) priceInp.value = p + 10;
+    if(!noteInp.value.includes('พิเศษ')) {
+       noteInp.value = (noteInp.value + ' พิเศษ').trim();
+    }
+  } else {
+    if(!isNaN(p)) priceInp.value = Math.max(0, p - 10);
+    noteInp.value = noteInp.value.replace('พิเศษ', '').trim();
   }
 }
 
-// สร้างข้อความสำหรับ copy รายการเดียว
-function buildItemCopyText(item, num) {
-  const customerName = document.getElementById('customer-name')?.value || '';
-  const channelMap = { line: 'ไลน์', phone: 'โทรศัพท์', walkin: 'หน้าร้าน' };
-  const ch = channelMap[selectedChannel] || selectedChannel;
-
-  let text = '';
-  if (num === 1) {
-    // แสดงหัวออเดอร์แค่รายการแรก
-    if (customerName) text += `👤 ${customerName} (${ch})\n`;
+// ปุ่มเปิด/ปิดความพิเศษ ในรายการอาหารที่อยู่ในตะกร้าแล้ว
+function toggleListSpecial(id) {
+  const item = orderItems.find(x=>x.id===id);
+  if(!item) return;
+  item.isSpecial = !item.isSpecial;
+  if(item.isSpecial) {
+    item.price += 10;
+    if(!(item.note||'').includes('พิเศษ')) item.note = ((item.note||'') + ' พิเศษ').trim();
+  } else {
+    item.price = Math.max(0, item.price - 10);
+    item.note = (item.note||'').replace('พิเศษ', '').trim();
   }
-  text += `${num}. ${item.name}`;
-  if (item.type) text += ` (${item.type})`;
-  text += ` × ${item.qty}`;
-  if (item.note) text += ` — ${item.note}`;
-  text += ` = ฿${item.price * item.qty}`;
-  return text;
+  renderOrderList();
+  updateCartBadge();
 }
 
-// คัดลอกรายการเดียว
-function copyOneItem(idx) {
-  const item = orderItems[idx];
-  if (!item) return;
-  const text = buildItemCopyText(item, idx + 1);
-  copyToClipboard(text);
+// ============================================================
+// PASTE HANDLER
+// ============================================================
+function handlePaste(e) {
+  const text = (e.clipboardData || window.clipboardData).getData('text');
+  if(!text) return;
+  e.preventDefault();
+  
+  let splitChar = '\n';
+  if(text.includes(',') && !text.includes('\n')) splitChar = ',';
+  
+  const lines = text.split(splitChar).map(l=>l.trim()).filter(l=>l.length>0);
+  parsePasteLines(lines);
 }
 
-// คัดลอกทั้งหมด
-function copyAllOrders() {
-  if (!orderItems || orderItems.length === 0) {
-    showToast('⚠️ ยังไม่มีออเดอร์', true);
+function parsePasteLines(lines) {
+  pasteQueue = [];
+  const preview = document.getElementById('paste-items');
+  const previewBox = document.getElementById('paste-preview');
+  preview.innerHTML = '';
+  
+  for(const line of lines) {
+    const parsed = parseOrderLine(line);
+    if(parsed && parsed.name) {
+      pasteQueue.push(parsed);
+      preview.innerHTML += `<div class="order-item">
+        <div style="flex:1">
+          <div class="item-name">${parsed.name}${parsed.type?' ('+parsed.type+')':''}</div>
+          <div class="item-note">${parsed.note||''}</div>
+        </div>
+        <div class="item-qty"><span class="qty-num">${parsed.qty}</span></div>
+        <div class="item-price">฿${parsed.price * parsed.qty}</div>
+      </div>`;
+    }
+  }
+  
+  if(pasteQueue.length > 0) {
+    previewBox.style.display = 'block';
+    showToast(`📋 พบ ${pasteQueue.length} รายการจากคัดลอก`);
+    document.getElementById('item-search').value = '';
+  } else {
+    document.getElementById('item-search').value = lines.join(' ');
+    onMenuSearch(lines[0]);
+  }
+}
+
+function parseOrderLine(line) {
+  let qty = 1, price = 0, name = '', note = '', type = '';
+  let qtyMatch = line.match(/(?:x|X|×|\*)\s*(\d+)|(\d+)\s*(จาน|ที่|อัน|ชิ้น|กล่อง|ถุง|ห่อ|ชาม)/);
+  if(qtyMatch) {
+    qty = parseInt(qtyMatch[1]||qtyMatch[2]);
+    line = line.replace(qtyMatch[0],'').trim();
+  }
+  let priceMatch = line.match(/(\d{2,3})\s*(บาท|บ\.)?$|^\s*(\d{2,3})\s+/);
+  if(priceMatch) {
+    price = parseInt(priceMatch[1]||priceMatch[3]);
+    line = line.replace(priceMatch[0],'').trim();
+  }
+  let noteMatch = line.match(/[（(]([^)）]+)[)）]|\[([^\]]+)\]/);
+  if(noteMatch) {
+    note = noteMatch[1] || noteMatch[2];
+    line = line.replace(noteMatch[0],'').trim();
+  }
+  name = line.trim();
+  if(!name) return null;
+  const found = menuData.find(m => 
+    m.name.includes(name) || name.includes(m.name) ||
+    (m.types||[]).some(t => name.includes(t))
+  );
+  
+  let isSpecial = name.includes('พิเศษ') || note.includes('พิเศษ');
+  
+  if(found) {
+    if(found.types && found.types.length>0) {
+      for(const t of found.types) {
+        if(name.includes(t) || note.includes(t)) {
+          type = t;
+          if(!price && found.prices && found.prices[t]) price = found.prices[t];
+          break;
+        }
+      }
+    }
+    if(!price) price = found.price;
+    name = found.name;
+  } else {
+    if(!price) price = 50;
+  }
+  
+  if (isSpecial && !priceMatch) price += 10;
+  
+  return { name, qty, price, note, type, isSpecial };
+}
+
+function confirmPaste() {
+  for(const item of pasteQueue) {
+    orderItems.push({
+      id: Date.now()+Math.random(),
+      name: item.name,
+      type: item.type,
+      qty: item.qty,
+      price: item.price,
+      note: item.note,
+      isSpecial: item.isSpecial
+    });
+  }
+  pasteQueue = [];
+  document.getElementById('paste-preview').style.display = 'none';
+  renderOrderList();
+  updateCartBadge();
+  showToast(`✅ เพิ่ม ${orderItems.length} รายการแล้ว`); // length is total order items length but acceptable logic
+}
+function cancelPaste() {
+  pasteQueue = [];
+  document.getElementById('paste-preview').style.display = 'none';
+}
+
+// ============================================================
+// ADD ITEM MANUALLY
+// ============================================================
+function addItem() {
+  const name = document.getElementById('item-search').value.trim();
+  const qty = parseInt(document.getElementById('item-qty').value)||1;
+  const price = parseFloat(document.getElementById('item-price').value);
+  const note = document.getElementById('item-note').value.trim();
+  if(!name){ showToast('กรุณาใส่ชื่อเมนู','error'); return; }
+  if(!price && price!==0){ showToast('กรุณาใส่ราคา','error'); return; }
+
+  const isSpecial = document.getElementById('chip-special')?.classList.contains('active') || note.includes('พิเศษ');
+
+  orderItems.push({
+    id: Date.now(),
+    name,
+    type: selectedType||'',
+    qty,
+    price,
+    note,
+    isSpecial
+  });
+  if(!recentMenus.includes(name)) {
+    recentMenus.unshift(name);
+    if(recentMenus.length>6) recentMenus.pop();
+    saveStorage();
+  }
+  renderOrderList();
+  updateCartBadge();
+  document.getElementById('item-search').value = '';
+  document.getElementById('item-price').value = '';
+  document.getElementById('item-note').value = '';
+  document.getElementById('item-qty').value = '1';
+  document.getElementById('type-row').style.display = 'none';
+  
+  document.getElementById('chip-special')?.classList.remove('active');
+  
+  selectedMenuId = null; selectedType = null;
+  showToast(`✅ เพิ่ม: ${name}`);
+  renderRecentTags();
+}
+
+// ============================================================
+// ORDER LIST
+// ============================================================
+function renderOrderList() {
+  const el = document.getElementById('order-list');
+  if(!orderItems.length){
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">🍽️</div><div class="empty-text">ยังไม่มีรายการ<br>พิมพ์หรือวางออเดอร์เพื่อเริ่มต้น</div></div>`;
     return;
   }
-  const customerName = document.getElementById('customer-name')?.value || '';
-  const channelMap = { line: 'ไลน์', phone: 'โทรศัพท์', walkin: 'หน้าร้าน' };
-  const ch = channelMap[selectedChannel] || selectedChannel;
+  el.innerHTML = `<div class="order-card">${orderItems.map((item,i)=>`
+    <div class="order-item" style="flex-direction:column;align-items:stretch;gap:6px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="font-size:12px;color:var(--text2);min-width:18px">${i+1}.</div>
+        <div style="flex:1">
+          <div class="item-name">${item.name}${item.type?` <span class="item-type">(${item.type})</span>`:''}</div>
+          <div style="font-size:11px;color:var(--text2)">฿${item.price} × ${item.qty} = <strong style="color:var(--gold-light)">฿${item.price*item.qty}</strong></div>
+        </div>
+        <div class="item-qty">
+          <button class="qty-btn" onclick="changeQty(${item.id},-1)">−</button>
+          <span class="qty-num">${item.qty}</span>
+          <button class="qty-btn" onclick="changeQty(${item.id},1)">+</button>
+        </div>
+        <button class="del-btn" onclick="removeItem(${item.id})">🗑</button>
+      </div>
+      <!-- ปุ่มเพิ่มพิเศษสำหรับรายการนี้ -->
+      <div style="padding-left:26px; display:flex; align-items:center; gap:6px;">
+        <input class="inp" style="font-size:11px;padding:6px 10px;color:var(--text2); flex:1; min-width:0;"
+          placeholder="💬 หมายเหตุ (เช่น เผ็ดน้อย...)"
+          value="${item.note||''}"
+          oninput="updateNote(${item.id}, this.value)">
+        <div class="chip ${item.isSpecial ? 'active' : ''}" style="margin:0; padding:6px 10px;" onclick="toggleListSpecial(${item.id})">⭐ พิเศษ (+10)</div>
+      </div>
+    </div>
+  `).join('')}</div>
+  <div style="padding:12px 4px;display:flex;justify-content:space-between;align-items:center">
+    <span style="color:var(--text2)">รวม ${orderItems.length} รายการ</span>
+    <span style="font-family:'Prompt';font-size:20px;font-weight:700;color:var(--gold-light)">฿${getSubtotal()}</span>
+  </div>`;
+}
 
-  let lines = [];
-  lines.push(`🍳 ออเดอร์ครัวอ้อยอ้อย`);
-  if (customerName) lines.push(`👤 ลูกค้า: ${customerName} (${ch})`);
-  lines.push(`🕐 ${new Date().toLocaleTimeString('th-TH')}`);
-  lines.push(`${'─'.repeat(24)}`);
+function changeQty(id, delta) {
+  const item = orderItems.find(x=>x.id===id);
+  if(!item) return;
+  item.qty = Math.max(1, item.qty+delta);
+  renderOrderList();
+  updateCartBadge();
+}
+function removeItem(id) {
+  orderItems = orderItems.filter(x=>x.id!==id);
+  renderOrderList();
+  updateCartBadge();
+}
+function getSubtotal() {
+  return orderItems.reduce((s,x)=>s+x.price*x.qty,0);
+}
+function updateCartBadge() {
+  const total = orderItems.reduce((s,x)=>s+x.qty,0);
+  const badge = document.getElementById('cart-badge');
+  badge.textContent = total;
+  badge.style.display = total>0 ? 'flex' : 'none';
+}
 
-  orderItems.forEach((item, idx) => {
-    let line = `${idx + 1}. ${item.name}`;
-    if (item.type) line += ` (${item.type})`;
-    line += ` × ${item.qty}`;
-    if (item.note) line += `\n   📝 ${item.note}`;
-    line += `  ฿${item.price * item.qty}`;
-    lines.push(line);
+// ============================================================
+// RECEIPT
+// ============================================================
+function renderReceipt() {
+  const chLabel = {line:'💬 ไลน์', phone:'📞 โทรศัพท์', walkin:'🏪 หน้าร้าน'}[selectedChannel]||'-';
+  document.getElementById('rcpt-table').textContent = chLabel;
+  document.getElementById('rcpt-customer').textContent = document.getElementById('customer-name').value||'-';
+  document.getElementById('rcpt-time').textContent = new Date().toLocaleTimeString('th');
+  document.getElementById('rcpt-id').textContent = '#' + String(orderIdCounter).padStart(4,'0');
+  
+  const items = document.getElementById('rcpt-items');
+  if(!orderItems.length){
+    items.innerHTML = '<div style="color:var(--text2);font-size:13px;text-align:center;padding:10px">ยังไม่มีรายการ</div>';
+    return;
+  }
+  items.innerHTML = orderItems.map(item=>`
+    <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);font-size:13px">
+      <div style="flex:1">${item.name}${item.type?` (${item.type})`:''} ×${item.qty}${item.note?`<br><span style="color:var(--text2);font-size:11px">💬 ${item.note}</span>`:''}</div>
+      <div style="font-weight:700;color:var(--gold)">฿${item.price*item.qty}</div>
+    </div>
+  `).join('');
+  calcTotal();
+}
+
+function calcTotal() {
+  const sub = getSubtotal();
+  const disc = parseFloat(document.getElementById('discount-inp').value)||0;
+  const extra = parseFloat(document.getElementById('extra-inp').value)||0;
+  const total = Math.max(0, sub - disc + extra);
+  document.getElementById('rcpt-subtotal').textContent = '฿'+sub;
+  document.getElementById('discount-show').textContent = disc>0 ? '-฿'+disc : '';
+  document.getElementById('extra-show').textContent = extra>0 ? '+฿'+extra : '';
+  document.getElementById('rcpt-total').textContent = '฿'+total;
+  calcChange();
+}
+
+function calcChange() {
+  const totalText = document.getElementById('rcpt-total').textContent.replace('฿','');
+  const total = parseFloat(totalText)||0;
+  const cash = parseFloat(document.getElementById('cash-inp').value)||0;
+  if(cash>0) {
+    document.getElementById('change-show').textContent = cash>=total ? '฿'+(cash-total) : '❌ ไม่พอ';
+  } else {
+    document.getElementById('change-show').textContent = '-';
+  }
+}
+
+// ============================================================
+// KITCHEN (หน้าจอใหญ่ + Auto Speak)
+// ============================================================
+const emojiDict = [
+  {k: 'กะเพรา', e: '🌿'}, {k: 'หมูกรอบ', e: '🥓'}, {k: 'ทะเล', e: '🦐🦑'},
+  {k: 'เนื้อ', e: '🥩'}, {k: 'หมู', e: '🐷'}, {k: 'ไก่', e: '🐔'},
+  {k: 'กระเทียม', e: '🧄'}, {k: 'ผงกะหรี่', e: '🍛'}, {k: 'ฉ่า', e: '🔥'},
+  {k: 'คะน้า', e: '🥬'}, {k: 'ปลากะป๋อง', e: '🥫'}, {k: 'ผักบุ้ง', e: '🌱'},
+  {k: 'ไข่เจียว', e: '🍳'}, {k: 'ไข่ดาว', e: '🍳'}, {k: 'พริกเกลือ', e: '🌶️🧂'},
+  {k: 'ตับ', e: '🟤'}, {k: 'ปลาดุก', e: '🐟'}, {k: 'พริกแกง', e: '🥘'},
+  {k: 'สุกี้', e: '🍲'}, {k: 'ผัก', e: '🥗'}, {k: 'ข้าว', e: '🍚'},
+  {k: 'พิเศษ', e: '⭐'}, {k: 'เผ็ดน้อย', e: '🤏🌶️'}, {k: 'ไม่เผ็ด', e: '🚫🌶️'},
+  {k: 'เผ็ด', e: '🌶️'}, {k: 'ไม่ผัก', e: '🚫🥗'}, {k: 'ไม่ใส่ผัก', e: '🚫🥗'}
+];
+
+function textToKitchenEmoji(text) {
+  let str = '';
+  emojiDict.forEach(d => {
+    if(text.includes(d.k)) str += d.e;
+  });
+  return str || '🍽️';
+}
+
+function toggleAutoSpeak(el) {
+  el.classList.toggle('on');
+  settings.autoSpeak = el.classList.contains('on');
+  saveStorage();
+}
+
+function renderKitchen() {
+  const el = document.getElementById('kitchen-items');
+  const pendingOrders = history.filter(o => o.kitchenStatus !== 'done');
+  
+  if(!pendingOrders.length){
+    el.innerHTML = '<div class="empty-state" style="margin-top:50px;"><div style="font-size:80px; margin-bottom:20px;">👨‍🍳</div><div style="font-size:24px; color:var(--gold);">ว่างจ้า พักผ่อนได้เลย</div></div>';
+    return;
+  }
+  
+  el.innerHTML = pendingOrders.map(o => {
+    const orderIdStr = '#' + String(o.id).padStart(4,'0');
+    return `
+      <div class="kitchen-card" onclick="speakOrderById(${o.id})">
+        <div style="font-size:20px; color:var(--gold-light); margin-bottom:12px; font-weight:bold; border-bottom:1px solid #444; padding-bottom:8px;">
+           บิล ${orderIdStr}
+        </div>
+        ${o.items.map(item => {
+           const fullText = `${item.name} ${item.type||''} ${item.note||''}`;
+           const emojis = textToKitchenEmoji(fullText);
+           return `
+             <div style="border-bottom: 1px dashed var(--border); padding: 16px 0;">
+                <div class="kitchen-emoji">${emojis}</div>
+                <div class="kitchen-qty">X ${item.qty}</div>
+                ${item.note ? `<div style="font-size:26px; color:#ff7675; text-align:center; font-weight:bold; margin-top:8px;">⚠️ ${item.note}</div>` : ''}
+                <div style="font-size:18px; color:var(--text2); text-align:center; margin-top:8px;">${item.name} ${item.type||''}</div>
+             </div>
+           `;
+        }).join('')}
+        <div class="kitchen-btn-group">
+          <button class="kitchen-btn-giant" style="background:var(--card2); color:var(--text); border:1px solid var(--border);" onclick="event.stopPropagation(); speakOrderById(${o.id})">🔊 ฟังซ้ำ</button>
+          <button class="kitchen-btn-giant" style="background:var(--green); color:white;" onclick="event.stopPropagation(); markKitchenDone(${o.id})">✅ ออกเสิร์ฟ</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function speakOrderById(id) {
+  const o = history.find(x => x.id === id);
+  if(o) speakOrderArray(o.items);
+}
+
+function speakOrderArray(items) {
+  if(!items || !items.length) return;
+  // หยุดเสียงเก่าก่อนเริ่มพูดใหม่
+  window.speechSynthesis.cancel();
+  
+  let textToSpeak = "ออเดอร์ใหม่เข้าจ้า. ";
+  items.forEach((item, i) => {
+    textToSpeak += `รายการที่ ${i+1}. ${item.name} ${item.type||''} ${item.qty} ที่. ${item.note||''}. `;
+  });
+  
+  const utterance = new SpeechSynthesisUtterance(textToSpeak);
+  utterance.lang = 'th-TH';
+  utterance.rate = 0.85; // พูดช้าลงนิดนึงเพื่อให้แม่ครัวฟังชัดๆ
+  window.speechSynthesis.speak(utterance);
+}
+
+function markKitchenDone(id) {
+  const o = history.find(x => x.id === id);
+  if(o) {
+    o.kitchenStatus = 'done';
+    saveStorage();
+    renderKitchen();
+    showToast('✅ เสิร์ฟแล้ว!');
+  }
+}
+
+// ============================================================
+// BLUETOOTH PRINTER (Connection)
+// ============================================================
+let btDevice = null;
+let btChar = null;
+
+async function connectBluetooth() {
+  if(!navigator.bluetooth) {
+    alert('❌ ระบบเบราว์เซอร์นี้ไม่รองรับบลูทูธ\n\nคำแนะนำ:\n1. ใช้แอป Chrome หรือ Edge บนมือถือ Android\n2. เปิดเว็บผ่านโปรโตคอล https:// เสมอ\n3. ระบบ iOS (iPhone/iPad) ไม่สามารถใช้บลูทูธบนเว็บได้ครับ');
+    return;
+  }
+  try {
+    showToast('🔍 กำลังค้นหาเครื่องพิมพ์...');
+    btDevice = await navigator.bluetooth.requestDevice({
+      acceptAllDevices: true, 
+      optionalServices: [
+        '000018f0-0000-1000-8000-00805f9b34fb',
+        '49535343-fe7d-4ae5-8fa9-9fafd205e455',
+        '0000ff00-0000-1000-8000-00805f9b34fb',
+        '0000ffe0-0000-1000-8000-00805f9b34fb',
+        'e7810a71-73ae-499d-8c15-faa9aef0c3f2' 
+      ]
+    });
+    btDevice.addEventListener('gattserverdisconnected', onBtDisconnected);
+    
+    let server;
+    let retries = 3;
+    while(retries > 0) {
+      try {
+        server = await btDevice.gatt.connect();
+        break;
+      } catch (err) {
+        retries--;
+        if(retries === 0) throw err;
+        await new Promise(r => setTimeout(r, 1000));
+      }
+    }
+    
+    await new Promise(r => setTimeout(r, 1200));
+    
+    let service, char;
+    const serviceUUIDs = [
+      '000018f0-0000-1000-8000-00805f9b34fb',
+      '49535343-fe7d-4ae5-8fa9-9fafd205e455',
+      '0000ff00-0000-1000-8000-00805f9b34fb',
+      '0000ffe0-0000-1000-8000-00805f9b34fb',
+      'e7810a71-73ae-499d-8c15-faa9aef0c3f2'
+    ];
+    for(let i=0; i<serviceUUIDs.length; i++) {
+      try {
+        service = await server.getPrimaryService(serviceUUIDs[i]);
+        if(service) {
+          const chars = await service.getCharacteristics();
+          char = chars.find(c=>c.properties.write||c.properties.writeWithoutResponse);
+        }
+        if(char) break;
+      } catch(e){}
+    }
+    if(!char) throw new Error('ไม่พบช่องทางการพิมพ์ของเครื่องนี้');
+    
+    btChar = char;
+    setBtStatus(true);
+    showToast(`✅ เชื่อมต่อ ${btDevice.name||'เครื่องพิมพ์'} สำเร็จ`);
+  } catch(e) {
+    alert('❌ เชื่อมต่อไม่สำเร็จ:\n[' + e.name + '] ' + e.message + '\n\n💡 วิธีแก้ไขเบื้องต้น (สำคัญมาก):\n1. เข้าไปที่ตั้งค่า Bluetooth ของมือถือ\n2. หาชื่อเครื่องพิมพ์ แล้วกด "เลิกจับคู่ (Unpair/Forget)" ทิ้งไปเลย\n3. ปิด-เปิดเครื่องพิมพ์ใหม่ 1 รอบ\n4. กลับมาที่เว็บนี้แล้วกดเชื่อมต่อใหม่ครับ');
+    if(btDevice && btDevice.gatt.connected) btDevice.gatt.disconnect();
+    btDevice = null; btChar = null;
+    setBtStatus(false);
+  }
+}
+
+function onBtDisconnected() {
+  btChar = null;
+  setBtStatus(false);
+  showToast('⚠️ เครื่องพิมพ์ตัดการเชื่อมต่อ', 'error');
+}
+
+function disconnectBluetooth() {
+  if(btDevice && btDevice.gatt.connected) btDevice.gatt.disconnect();
+  btDevice = null; btChar = null;
+  setBtStatus(false);
+  showToast('🔌 ตัดการเชื่อมต่อแล้ว');
+}
+
+function setBtStatus(connected) {
+  const el = document.getElementById('bt-status');
+  const conn = document.getElementById('bt-connect-btn');
+  const disc = document.getElementById('bt-disconnect-btn');
+  if(!el) return;
+  if(connected) {
+    el.innerHTML = `🟢 เชื่อมต่อแล้ว: <strong>${btDevice?.name||'เครื่องพิมพ์'}</strong>`;
+    el.style.color = 'var(--green)';
+    conn.style.display = 'none';
+    disc.style.display = 'flex';
+  } else {
+    el.innerHTML = '⚪ ยังไม่ได้เชื่อมต่อ';
+    el.style.color = 'var(--text2)';
+    conn.style.display = 'flex';
+    disc.style.display = 'none';
+  }
+}
+
+// ============================================================
+// MODAL PREVIEW & IMAGE GENERATION 
+// ============================================================
+function showPreview() {
+  if(!orderItems.length){ showToast('ไม่มีรายการ','error'); return; }
+  
+  const totalText = document.getElementById('rcpt-total').textContent.replace('฿','');
+  const chLabel = {line:'ไลน์', phone:'โทรศัพท์', walkin:'หน้าร้าน'}[selectedChannel]||'-';
+  const customer = document.getElementById('customer-name').value||'-';
+  const now = new Date();
+  const timeStr = now.toLocaleDateString('en-GB') + ' ' + now.toLocaleTimeString('th', {hour:'2-digit', minute:'2-digit'});
+  const orderId = '#' + String(orderIdCounter).padStart(4,'0');
+  const disc = parseFloat(document.getElementById('discount-inp').value)||0;
+  const extra = parseFloat(document.getElementById('extra-inp').value)||0;
+  const sub = getSubtotal();
+  const totalAmount = parseFloat(totalText) || 0;
+
+  // ปรับขนาดฟอนต์ให้ใหญ่ขึ้นเพื่อรองรับกระดาษ 58mm ได้อย่างสวยงาม
+  let html = '';
+  if(settings.logoUrl) {
+    html += `<div style="text-align:center; margin-bottom:10px;"><img src="${settings.logoUrl}" crossorigin="anonymous" style="max-width:140px; max-height:140px; border-radius:8px;" onerror="this.style.display='none'"></div>`;
+  }
+  
+  html += `
+    <div style="text-align:center;font-weight:bold;font-size:34px;margin-bottom:10px;line-height:1.2;">${settings.shopname}</div>
+    <div style="text-align:center;font-size:22px;margin-bottom:14px;">โทร: ${settings.phone}</div>
+    <div style="border-top:2px dashed #000;margin:14px 0;"></div>
+    <div style="display:flex;justify-content:space-between;font-size:22px;margin-bottom:6px;">
+      <span>ช่องทาง: ${chLabel}</span><span style="font-weight:bold;">${orderId}</span>
+    </div>
+    <div style="font-size:22px;margin-bottom:6px;">ลูกค้า: ${customer}</div>
+    <div style="font-size:20px;color:#444;">${timeStr}</div>
+    <div style="border-top:2px dashed #000;margin:14px 0;"></div>
+  `;
+  
+  orderItems.forEach((item,i)=>{
+    html += `
+      <div style="display:flex;justify-content:space-between;font-size:24px;margin-bottom:6px;line-height:1.3;">
+        <span style="font-weight:bold; flex:1; padding-right:10px; word-break: break-word;">${settings.showNum?(i+1)+'. ':''}${item.name}${item.type ? ' (' + item.type + ')' : ''} x${item.qty}</span>
+        <span style="font-weight:bold; white-space: nowrap;">${item.price * item.qty}</span>
+      </div>
+    `;
+    if(item.note) html += `<div style="font-size:20px;color:#555;padding-left:20px;margin-bottom:8px;line-height:1.2;">* ${item.note}</div>`;
+  });
+  
+  html += `<div style="border-top:2px dashed #000;margin:14px 0;"></div>`;
+  html += `<div style="display:flex;justify-content:space-between;font-size:22px;margin-bottom:6px;"><span>ยอดรวม</span><span>${sub}</span></div>`;
+  if(disc>0) html += `<div style="display:flex;justify-content:space-between;font-size:22px;margin-bottom:6px;"><span>ส่วนลด</span><span>-${disc}</span></div>`;
+  if(extra>0) html += `<div style="display:flex;justify-content:space-between;font-size:22px;margin-bottom:6px;"><span>จ่ายเพิ่ม</span><span>+${extra}</span></div>`;
+  html += `<div style="border-top:3px solid #000;margin:14px 0;"></div>`;
+  html += `<div style="display:flex;justify-content:space-between;font-weight:bold;font-size:28px;margin-bottom:14px;"><span>รวมสุทธิ</span><span>${totalText} บาท</span></div>`;
+  
+  // PromptPay QR Code
+  if(settings.promptpay && settings.qrCode) {
+    const payload = getPromptPayPayload(settings.promptpay, totalAmount);
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(payload)}`;
+    html += `
+      <div style="text-align:center;margin-top:20px;">
+        <div style="font-size:22px;font-weight:bold;margin-bottom:10px;">ชำระเงินผ่าน QR Code</div>
+        <img src="${qrUrl}" crossorigin="anonymous" style="width:220px;height:220px;">
+        <div style="font-size:20px;margin-top:10px;font-weight:bold;">พร้อมเพย์: ${settings.promptpay}</div>
+      </div>
+    `;
+  }
+  
+  html += `<div style="border-top:2px dashed #000;margin:18px 0;"></div>`;
+  html += `<div style="text-align:center;font-size:24px;font-weight:bold;margin-bottom:8px;line-height:1.3;">${settings.footer}</div>`;
+  
+  const captureArea = document.getElementById('receipt-content-to-capture');
+  captureArea.innerHTML = html;
+  
+  document.getElementById('preview-modal-title').textContent = '👁️ ตัวอย่างใบเสร็จ';
+  document.getElementById('preview-modal').classList.add('open');
+  document.getElementById('preview-content').innerHTML = '<div style="text-align:center;padding:20px;">กำลังสร้างใบเสร็จ... ⏳</div>';
+
+  const images = captureArea.querySelectorAll('img');
+  const promises = Array.from(images).map(img => {
+    if (img.complete) return Promise.resolve();
+    return new Promise(resolve => {
+      img.onload = resolve;
+      img.onerror = resolve; 
+    });
   });
 
-  const total = orderItems.reduce((s, i) => s + i.price * i.qty, 0);
-  lines.push(`${'─'.repeat(24)}`);
-  lines.push(`💰 รวม: ฿${total}`);
-
-  copyToClipboard(lines.join('\n'));
+  Promise.all(promises).then(() => {
+    setTimeout(() => {
+      html2canvas(captureArea, { 
+        scale: 1, 
+        width: 384, 
+        useCORS: true,
+        backgroundColor: '#ffffff'
+      }).then(canvas => {
+        // ล็อกความกว้างไว้ที่ 384px ป้องกันเครื่องพิมพ์เละ
+        if (canvas.width !== 384) {
+          const tempCanvas = document.createElement('canvas');
+          tempCanvas.width = 384;
+          tempCanvas.height = Math.floor(canvas.height * (384 / canvas.width));
+          const tCtx = tempCanvas.getContext('2d');
+          tCtx.drawImage(canvas, 0, 0, tempCanvas.width, tempCanvas.height);
+          canvas = tempCanvas;
+        }
+        
+        printImageCanvas = canvas;
+        const imgData = canvas.toDataURL('image/png');
+        document.getElementById('preview-content').innerHTML = `<img src="${imgData}" alt="Receipt Preview">`;
+      }).catch(err => {
+        document.getElementById('preview-content').innerHTML = `<div style="color:red">เกิดข้อผิดพลาดในการสร้างรูป: ${err.message}</div>`;
+      });
+    }, 300); 
+  });
 }
 
-// ฟังก์ชัน copy จริงๆ
-function copyToClipboard(text) {
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(text).then(() => {
-      showToast('✅ คัดลอกไปยังคลิปบอร์ดแล้ว!');
-    }).catch(() => fallbackCopy(text));
-  } else {
-    fallbackCopy(text);
+function closePreview() {
+  document.getElementById('preview-modal').classList.remove('open');
+  printImageCanvas = null;
+}
+
+// ============================================================
+// ฟังก์ชันแปลง Canvas เป็นภาพขาวดำให้ตรงกับเครื่อง 58mm
+// ============================================================
+function canvasToPrinterImage(canvas) {
+  const ctx = canvas.getContext('2d');
+  const width = canvas.width; // 384 เสมอ
+  const height = canvas.height;
+  const imgData = ctx.getImageData(0, 0, width, height).data;
+  
+  const bytesWidth = 48; // เครื่อง 58mm = 384 จุด / 8 bit = 48 bytes
+  const buffer = new Uint8Array(bytesWidth * height);
+  
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < 384; x++) {
+      if (x >= width) break;
+      const idx = (y * width + x) * 4;
+      const r = imgData[idx];
+      const g = imgData[idx + 1];
+      const b = imgData[idx + 2];
+      const a = imgData[idx + 3];
+      
+      let isBlack = false;
+      if (a > 128) {
+        const brightness = (r * 0.299 + g * 0.587 + b * 0.114);
+        if (brightness < 128) isBlack = true; 
+      }
+      
+      if (isBlack) {
+        const byteIdx = y * bytesWidth + Math.floor(x / 8);
+        const bitIdx = 7 - (x % 8);
+        buffer[byteIdx] |= (1 << bitIdx);
+      }
+    }
+  }
+  
+  const header = new Uint8Array([0x1D, 0x76, 0x30, 0x00, 48, 0, height % 256, Math.floor(height / 256)]);
+  const printData = new Uint8Array(header.length + buffer.length);
+  printData.set(header);
+  printData.set(buffer, header.length);
+  
+  return printData;
+}
+
+async function executePrintImage() {
+  if(!btChar) {
+    showToast('⚠️ กรุณาเชื่อมต่อบลูทูธก่อนพริ้น', 'error'); 
+    closePreview();
+    showPage('settings'); 
+    return; 
+  }
+  if(!printImageCanvas) {
+    showToast('⚠️ รูปภาพยังไม่พร้อม กรุณารอหรือลองกดดูตัวอย่างใหม่', 'error');
+    return;
+  }
+  
+  try {
+    showToast('📡 กำลังทยอยส่งรูปเข้าเครื่องพิมพ์...');
+    const printData = canvasToPrinterImage(printImageCanvas);
+    
+    const ESC = 0x1B, GS = 0x1D;
+    const initCmd = new Uint8Array([ESC, 0x40]);
+    const cutCmd = new Uint8Array([0x0A, 0x0A, 0x0A, GS, 0x56, 0x01]);
+    
+    const finalData = new Uint8Array(initCmd.length + printData.length + cutCmd.length);
+    finalData.set(initCmd);
+    finalData.set(printData, initCmd.length);
+    finalData.set(cutCmd, initCmd.length + printData.length);
+    
+    // ปรับจูนการส่งข้อมูลใหม่: บังคับหน่วงเวลาเสมอ ไม่ว่าเครื่องพิมพ์จะใช้โปรโตคอลไหน
+    const CHUNK = 100; // ลดขนาดต่อรอบเพื่อไม่ให้เครื่องรวน
+    for(let i=0; i<finalData.length; i+=CHUNK) {
+      const chunk = finalData.slice(i, i+CHUNK);
+      if(btChar.properties.writeWithoutResponse) {
+        await btChar.writeValueWithoutResponse(chunk);
+      } else {
+        await btChar.writeValue(chunk);
+      }
+      // บังคับหน่วงเวลา 30 มิลลิวินาทีทุกรอบ ป้องกันข้อมูลล้นจนพริ้นเตอร์ค้าง
+      await new Promise(r=>setTimeout(r, 30)); 
+    }
+    
+    showToast('✅ พิมพ์สำเร็จ!');
+    closePreview();
+    if(settings.autoSheet && settings.sheetUrl) setTimeout(()=>saveToSheet(), 500);
+    
+  } catch(e) {
+    showToast('❌ พิมพ์ล้มเหลว: ' + e.message, 'error');
+    console.error(e);
   }
 }
-function fallbackCopy(text) {
-  const ta = document.createElement('textarea');
-  ta.value = text;
-  ta.style.position = 'fixed';
-  ta.style.opacity = '0';
-  document.body.appendChild(ta);
-  ta.select();
-  document.execCommand('copy');
-  document.body.removeChild(ta);
-  showToast('✅ คัดลอกแล้ว!');
+
+// ============================================================
+// SAVE ORDER
+// ============================================================
+function saveOrder() {
+  if(!orderItems.length){ showToast('ไม่มีรายการ','error'); return; }
+  const totalText = document.getElementById('rcpt-total').textContent.replace('฿','');
+  const extra = parseFloat(document.getElementById('extra-inp').value)||0;
+  const order = {
+    id: orderIdCounter++,
+    channel: selectedChannel,
+    table: {line:'ไลน์',phone:'โทรศัพท์',walkin:'หน้าร้าน'}[selectedChannel]||'-',
+    customer: document.getElementById('customer-name').value||'-',
+    items: [...orderItems],
+    subtotal: getSubtotal(),
+    extraCharge: extra,
+    total: parseFloat(totalText)||0,
+    discount: parseFloat(document.getElementById('discount-inp').value)||0,
+    time: new Date().toISOString(),
+    kitchenStatus: 'pending' // สถานะสำหรับเข้าครัว
+  };
+  history.unshift(order);
+  if(history.length>50) history.pop();
+  saveStorage();
+  
+  // ให้ระบบช่วยอ่านถ้าตั้งค่าไว้
+  if(settings.autoSpeak) {
+    speakOrderArray(orderItems);
+  }
+  
+  showToast(`💾 บันทึกออเดอร์ #${String(order.id).padStart(4,'0')} แล้ว`);
 }
-ผลลัพธ์ที่ได้:
 
-ปุ่มสีน้ำเงิน "📋 คัดลอกออเดอร์ทั้งหมด" อยู่ด้านบนหน้าครัว — คัดลอกทุกรายการพร้อมชื่อลูกค้า เวลา และยอดรวม
-ปุ่ม "📋 คัดลอก" มุมขวาบนของแต่ละการ์ด — คัดลอกเฉพาะรายการนั้น
-ข้อความที่คัดลอกรองรับส่ง Line/SMS ได้ทันที เช่น:
-🍳 ออเดอร์ครัวอ้อยอ้อย
-👤 ลูกค้า: อ้อย (ไลน์)
-🕐 14:32:05
-────────────────────────
-1. กะเพราหมูกรอบ × 2  ฿130
-2. ข้าวเปล่า × 2  ฿20
-────────────────────────
-💰 รวม: ฿150
+// ============================================================
+// GOOGLE SHEET
+// ============================================================
+async function saveToSheet() {
+  if(!settings.sheetUrl){
+    showToast('กรุณาตั้งค่า Google Sheet URL ก่อน','error');
+    showPage('settings');
+    return;
+  }
+  const totalText = document.getElementById('rcpt-total').textContent.replace('฿','');
+  const extra = parseFloat(document.getElementById('extra-inp').value)||0;
+  const statusRow = document.getElementById('sheet-status-row');
+  statusRow.innerHTML = '<span class="sheet-status pending">⏳ กำลังบันทึก...</span>';
+  
+  const data = {
+    orderId: String(orderIdCounter).padStart(4,'0'),
+    channel: {line:'ไลน์',phone:'โทรศัพท์',walkin:'หน้าร้าน'}[selectedChannel]||'-',
+    customer: document.getElementById('customer-name').value||'-',
+    items: orderItems.map(x=>`${x.name}${x.type?`(${x.type})`:''} x${x.qty}`).join(', '),
+    extraCharge: extra,
+    total: parseFloat(totalText)||0,
+    time: new Date().toLocaleString('th'),
+    note: orderItems.map(x=>x.note).filter(Boolean).join('; '),
+  };
+  
+  try {
+    const res = await fetch(settings.sheetUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+      mode: 'no-cors',
+    });
+    statusRow.innerHTML = '<span class="sheet-status ok">✅ บันทึก Sheet สำเร็จ</span>';
+    showToast('📊 บันทึก Google Sheet สำเร็จ');
+  } catch(e) {
+    statusRow.innerHTML = '<span class="sheet-status err">❌ บันทึก Sheet ล้มเหลว</span>';
+    showToast('❌ บันทึก Sheet ล้มเหลว: '+e.message, 'error');
+  }
+}
 
+// ============================================================
+// MENU BROWSER
+// ============================================================
+let currentCat = 'ทั้งหมด';
+function renderMenuBrowser() {
+  const cats = ['ทั้งหมด', ...new Set(menuData.map(m=>m.cat))];
+  const tabsEl = document.getElementById('cat-tabs');
+  tabsEl.innerHTML = cats.map(c=>
+    `<div class="cat-tab${c===currentCat?' active':''}" onclick="filterCat('${c}')">${c}</div>`
+  ).join('');
+  renderMenuGrid();
+}
+function filterCat(cat) {
+  currentCat = cat;
+  renderMenuBrowser();
+}
+function renderMenuGrid() {
+  const items = currentCat==='ทั้งหมด' ? menuData : menuData.filter(m=>m.cat===currentCat);
+  const grid = document.getElementById('menu-grid');
+  grid.innerHTML = items.map(m=>{
+    let priceStr = m.types && m.types.length>0
+      ? `${Math.min(...Object.values(m.prices||{}))}+`
+      : `฿${m.price}`;
+    return `<div class="menu-card" onclick="quickAddFromMenu(${m.id})">
+      <div class="add-icon">+</div>
+      <div class="menu-card-cat">${m.cat}</div>
+      <div class="menu-card-name">${m.name}</div>
+      ${m.sub?`<div class="menu-card-multi">${m.sub}</div>`:''}
+      <div class="menu-card-price">${priceStr}</div>
+      ${m.types&&m.types.length>0?`<div class="menu-card-multi">${m.types.join(' · ')}</div>`:''}
+    </div>`;
+  }).join('');
+}
 
+function quickAddFromMenu(id) {
+  showPage('order');
+  selectMenu(id);
+  document.getElementById('item-search').focus();
+}
 
+// ============================================================
+// HISTORY
+// ============================================================
+function renderHistory() {
+  const el = document.getElementById('history-list');
+  if(!history.length){
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">📜</div><div class="empty-text">ยังไม่มีประวัติออเดอร์</div></div>`;
+    return;
+  }
+  el.innerHTML = history.map(o=>{
+    const t = new Date(o.time).toLocaleString('th');
+    const itemsSummary = o.items.map(x=>`${x.name} x${x.qty}`).join(', ');
+    return `<div class="hist-card">
+      <div class="hist-header">
+        <div>
+          <div class="hist-table">${o.table||'-'} · ${o.customer}</div>
+          <div class="hist-time">${t}</div>
+          <div class="hist-time">ออเดอร์ #${String(o.id).padStart(4,'0')}</div>
+        </div>
+        <div class="hist-total">฿${o.total}</div>
+      </div>
+      <div class="hist-items">${itemsSummary}</div>
+      <div class="hist-actions">
+        <button class="hist-btn" onclick="reprintOrder(${o.id})">🖨️ พริ้นใหม่</button>
+        <button class="hist-btn" onclick="reloadOrder(${o.id})">📋 โหลดใหม่</button>
+        <button class="hist-btn danger" onclick="deleteOrder(${o.id})">🗑️ ลบ</button>
+      </div>
+    </div>`;
+  }).join('');
+}
 
+function deleteOrder(id) {
+  history = history.filter(o=>o.id!==id);
+  saveStorage();
+  renderHistory();
+}
+function reloadOrder(id) {
+  const o = history.find(x=>x.id===id);
+  if(!o) return;
+  orderItems = o.items.map(x=>({...x, id:Date.now()+Math.random(), isSpecial: x.note && x.note.includes('พิเศษ')}));
+  if(o.channel) {
+    selectedChannel = o.channel;
+    document.querySelectorAll('.channel-btn').forEach(b=>b.classList.remove('active'));
+    const btn = document.getElementById('ch-'+o.channel);
+    if(btn) btn.classList.add('active');
+  }
+  document.getElementById('customer-name').value = o.customer!=='-'?o.customer:'';
+  renderOrderList();
+  updateCartBadge();
+  showPage('order');
+  showToast('📋 โหลดออเดอร์แล้ว');
+}
+function reprintOrder(id) {
+  const o = history.find(x=>x.id===id);
+  if(!o) return;
+  orderItems = o.items;
+  renderReceipt();
+  showPreview();
+}
 
-Claude is AI and can make mistakes. Please double-check responses.
+// ============================================================
+// SETTINGS
+// ============================================================
+function renderSettings() {
+  document.getElementById('s-shopname').value = settings.shopname;
+  document.getElementById('s-phone').value = settings.phone;
+  document.getElementById('s-line').value = settings.line;
+  document.getElementById('s-footer').value = settings.footer;
+  document.getElementById('s-sheet-url').value = settings.sheetUrl;
+  document.getElementById('s-sheet-name').value = settings.sheetName;
+  document.getElementById('s-promptpay').value = settings.promptpay;
+  document.getElementById('s-logourl').value = settings.logoUrl || '';
+  
+  if(settings.autoSheet) document.getElementById('auto-sheet-toggle').classList.add('on');
+  if(settings.qrCode) document.getElementById('qr-toggle').classList.add('on');
+  if(settings.showNum) document.getElementById('num-toggle').classList.add('on');
+  
+  renderMenuEditor();
+}
+
+function saveSettings() {
+  settings.shopname = document.getElementById('s-shopname').value;
+  settings.phone = document.getElementById('s-phone').value;
+  settings.line = document.getElementById('s-line').value;
+  settings.footer = document.getElementById('s-footer').value;
+  settings.sheetUrl = document.getElementById('s-sheet-url').value;
+  settings.sheetName = document.getElementById('s-sheet-name').value;
+  settings.promptpay = document.getElementById('s-promptpay').value;
+  settings.logoUrl = document.getElementById('s-logourl').value;
+  
+  settings.autoSheet = document.getElementById('auto-sheet-toggle').classList.contains('on');
+  settings.qrCode = document.getElementById('qr-toggle').classList.contains('on');
+  settings.showNum = document.getElementById('num-toggle').classList.contains('on');
+  saveStorage();
+  
+  document.getElementById('nav-sub').textContent = 'โทร. '+settings.phone;
+  showToast('💾 บันทึกการตั้งค่าแล้ว');
+}
+
+function renderMenuEditor() {
+  const cats = [...new Set(menuData.map(m=>m.cat))];
+  const el = document.getElementById('menu-cat-list');
+  el.innerHTML = cats.map(cat=>{
+    const items = menuData.filter(m=>m.cat===cat);
+    return `<div style="padding:6px 14px;background:var(--dark3);font-size:12px;color:var(--gold);font-weight:600">${cat}</div>
+    ${items.map(m=>`<div class="menu-edit-item">
+      <div class="menu-edit-name">${m.name}</div>
+      <div class="menu-edit-price">฿${m.price}</div>
+      <button class="menu-del-btn" onclick="deleteMenu(${m.id})">✕</button>
+    </div>`).join('')}`;
+  }).join('');
+  
+  const sel = document.getElementById('new-menu-cat');
+  sel.innerHTML = cats.map(c=>`<option value="${c}">${c}</option>`).join('') + '<option value="ใหม่">+ หมวดใหม่</option>';
+}
+
+function addMenuManual() {
+  const name = document.getElementById('new-menu-name').value.trim();
+  const price = parseFloat(document.getElementById('new-menu-price').value)||0;
+  const cat = document.getElementById('new-menu-cat').value;
+  if(!name||!price){ showToast('กรุณาใส่ชื่อและราคา','error'); return; }
+  menuData.push({ id: Date.now(), name, price, cat, types:[] });
+  saveStorage();
+  renderMenuEditor();
+  document.getElementById('new-menu-name').value = '';
+  document.getElementById('new-menu-price').value = '';
+  showToast('✅ เพิ่มเมนูแล้ว');
+}
+
+function deleteMenu(id) {
+  menuData = menuData.filter(m=>m.id!==id);
+  saveStorage();
+  renderMenuEditor();
+}
+
+// ============================================================
+// RECENT TAGS
+// ============================================================
+function renderRecentTags() {
+  const el = document.getElementById('recent-tags');
+  if(!recentMenus.length){ el.innerHTML=''; return; }
+  el.innerHTML = `<span style="color:var(--text2);font-size:10px">ล่าสุด:</span>` +
+    recentMenus.slice(0,5).map(n=>
+      `<span class="tag" style="cursor:pointer" onclick="quickTag('${n}')">${n}</span>`
+    ).join('');
+}
+function quickTag(name) {
+  document.getElementById('item-search').value = name;
+  onMenuSearch(name);
+}
+
+// ============================================================
+// TOAST & NOTE
+// ============================================================
+function showToast(msg, type='ok') {
+  const el = document.getElementById('toast');
+  if (!el) return;
+  el.textContent = msg;
+  el.className = 'toast show' + (type==='error'?' error':'');
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(()=>el.classList.remove('show'), 2500);
+}
+
+function updateNote(id, val) {
+  const item = orderItems.find(x=>x.id===id);
+  if(item) item.note = val;
+}
+
+// ============================================================
+// INIT
+// ============================================================
+loadStorage();
+renderOrderList();
+renderRecentTags();
+renderMenuBrowser(); 
+document.getElementById('nav-sub').textContent = 'โทร. '+settings.phone;
+
+document.addEventListener('click', e=>{
+  if(!e.target.closest('.inp-wrap')) hideSuggest();
+});
+document.getElementById('item-search').addEventListener('keydown', e=>{
+  if(e.key==='Enter') { hideSuggest(); document.getElementById('item-qty').focus(); }
+});
+</script>
+</body>
+</html>
