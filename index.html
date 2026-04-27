@@ -1230,7 +1230,23 @@ async function connectBluetooth() {
       ]
     });
     btDevice.addEventListener('gattserverdisconnected', onBtDisconnected);
-    const server = await btDevice.gatt.connect();
+    
+    // --- เพิ่มระบบ Retry การเชื่อมต่อ (แก้ปัญหาแอนดรอยด์ชอบหลุด) ---
+    let server;
+    let retries = 3;
+    while(retries > 0) {
+      try {
+        server = await btDevice.gatt.connect();
+        break; // ถ้าสำเร็จให้ออกลูป
+      } catch (err) {
+        retries--;
+        if(retries === 0) throw err;
+        await new Promise(r => setTimeout(r, 1000)); // รอ 1 วินาทีแล้วลองใหม่
+      }
+    }
+    
+    // หน่วงเวลาให้ชิป Bluetooth พร้อมทำงาน (แก้ปัญหา service not found)
+    await new Promise(r => setTimeout(r, 1200));
     
     let service, char;
     const serviceUUIDs = [
@@ -1256,7 +1272,8 @@ async function connectBluetooth() {
     setBtStatus(true);
     showToast(`✅ เชื่อมต่อ ${btDevice.name||'เครื่องพิมพ์'} สำเร็จ`);
   } catch(e) {
-    alert('❌ เชื่อมต่อไม่สำเร็จ:\n' + e.message + '\n\nเช็คให้แน่ใจว่าเปิดเครื่องพิมพ์แล้ว และเครื่องไม่ได้เชื่อมต่อค้างอยู่กับแอปอื่นครับ');
+    alert('❌ เชื่อมต่อไม่สำเร็จ:\n[' + e.name + '] ' + e.message + '\n\n💡 วิธีแก้ไขเบื้องต้น (สำคัญมาก):\n1. เข้าไปที่ตั้งค่า Bluetooth ของมือถือ\n2. หาชื่อเครื่องพิมพ์ แล้วกด "เลิกจับคู่ (Unpair/Forget)" ทิ้งไปเลย (ห้ามจับคู่ค้างไว้ในตั้งค่าเครื่อง)\n3. ปิด-เปิดเครื่องพิมพ์ใหม่ 1 รอบ\n4. กลับมาที่เว็บนี้แล้วกดเชื่อมต่อใหม่ครับ');
+    if(btDevice && btDevice.gatt.connected) btDevice.gatt.disconnect();
     btDevice = null; btChar = null;
     setBtStatus(false);
   }
@@ -1550,6 +1567,46 @@ async function saveToSheet() {
 }
 
 // ============================================================
+// MENU BROWSER
+// ============================================================
+let currentCat = 'ทั้งหมด';
+function renderMenuBrowser() {
+  const cats = ['ทั้งหมด', ...new Set(menuData.map(m=>m.cat))];
+  const tabsEl = document.getElementById('cat-tabs');
+  tabsEl.innerHTML = cats.map(c=>
+    `<div class="cat-tab${c===currentCat?' active':''}" onclick="filterCat('${c}')">${c}</div>`
+  ).join('');
+  renderMenuGrid();
+}
+function filterCat(cat) {
+  currentCat = cat;
+  renderMenuBrowser();
+}
+function renderMenuGrid() {
+  const items = currentCat==='ทั้งหมด' ? menuData : menuData.filter(m=>m.cat===currentCat);
+  const grid = document.getElementById('menu-grid');
+  grid.innerHTML = items.map(m=>{
+    let priceStr = m.types && m.types.length>0
+      ? `${Math.min(...Object.values(m.prices||{}))}+`
+      : `฿${m.price}`;
+    return `<div class="menu-card" onclick="quickAddFromMenu(${m.id})">
+      <div class="add-icon">+</div>
+      <div class="menu-card-cat">${m.cat}</div>
+      <div class="menu-card-name">${m.name}</div>
+      ${m.sub?`<div class="menu-card-multi">${m.sub}</div>`:''}
+      <div class="menu-card-price">${priceStr}</div>
+      ${m.types&&m.types.length>0?`<div class="menu-card-multi">${m.types.join(' · ')}</div>`:''}
+    </div>`;
+  }).join('');
+}
+
+function quickAddFromMenu(id) {
+  showPage('order');
+  selectMenu(id);
+  document.getElementById('item-search').focus();
+}
+
+// ============================================================
 // HISTORY
 // ============================================================
 function renderHistory() {
@@ -1682,6 +1739,38 @@ function deleteMenu(id) {
   menuData = menuData.filter(m=>m.id!==id);
   saveStorage();
   renderMenuEditor();
+}
+
+// ============================================================
+// RECENT TAGS
+// ============================================================
+function renderRecentTags() {
+  const el = document.getElementById('recent-tags');
+  if(!recentMenus.length){ el.innerHTML=''; return; }
+  el.innerHTML = `<span style="color:var(--text2);font-size:10px">ล่าสุด:</span>` +
+    recentMenus.slice(0,5).map(n=>
+      `<span class="tag" style="cursor:pointer" onclick="quickTag('${n}')">${n}</span>`
+    ).join('');
+}
+function quickTag(name) {
+  document.getElementById('item-search').value = name;
+  onMenuSearch(name);
+}
+
+// ============================================================
+// TOAST & NOTE
+// ============================================================
+function showToast(msg, type='ok') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast show' + (type==='error'?' error':'');
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(()=>el.classList.remove('show'), 2500);
+}
+
+function updateNote(id, val) {
+  const item = orderItems.find(x=>x.id===id);
+  if(item) item.note = val;
 }
 
 // ============================================================
