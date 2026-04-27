@@ -524,10 +524,12 @@ select.inp { cursor: pointer; }
     </div>
     <div class="input-row">
       <input class="inp inp-xs" id="item-qty" type="number" value="1" min="1" placeholder="จำนวน">
-      <input class="inp" id="item-note" placeholder="หมายเหตุ (พิเศษ, ไม่ใส่ผัก...)" type="text">
+      <input class="inp" id="item-note" placeholder="หมายเหตุ (เช่น เผ็ดน้อย, ไม่ใส่ผัก...)" type="text">
     </div>
-    <div class="input-row">
+    <div class="input-row" style="align-items: center;">
       <input class="inp inp-sm" id="item-price" type="number" placeholder="ราคา" step="5">
+      <!-- เพิ่มปุ่ม พิเศษ +10 กลับมาที่หน้ารับออเดอร์ -->
+      <div class="chip" id="chip-special" onclick="toggleItemSpecial()">⭐ พิเศษ (+10)</div>
       <div style="flex:1">
         <div class="tag-row" id="recent-tags"></div>
       </div>
@@ -592,10 +594,7 @@ select.inp { cursor: pointer; }
       <span style="color:var(--text2);font-size:13px">บาท</span>
       <span class="discount-val" id="discount-show"></span>
     </div>
-    <div class="discount-row">
-      <span style="color:var(--text2);font-size:13px">เพิ่มพิเศษ +10 บ./รายการ</span>
-      <div class="toggle" id="special-toggle" onclick="toggleSpecial(this)" style="flex:0 0 auto"></div>
-    </div>
+    <!-- เอาปุ่ม +10 บ/รายการ ออกจากหน้าใบเสร็จรวมแล้ว -->
     <div class="receipt-line" style="border-top:2px solid var(--gold);margin-top:8px"></div>
     <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0">
       <span style="font-size:16px;font-weight:700">ยอดสุทธิ</span>
@@ -922,6 +921,10 @@ function selectMenu(id) {
   if(!m) return;
   selectedMenuId = id;
   document.getElementById('item-search').value = m.name;
+  
+  // ยกเลิกการเลือก "พิเศษ" ทิ้ง เมื่อเริ่มเลือกเมนูใหม่
+  document.getElementById('chip-special')?.classList.remove('active');
+  
   hideSuggest();
   // Show type selector if has types
   if(m.types && m.types.length > 0) {
@@ -945,14 +948,46 @@ function renderTypeChips(m) {
 function selectType(type, mid) {
   selectedType = type;
   const m = menuData.find(x=>x.id===mid);
+  
+  let newPrice = m.price;
   if(m && m.prices && m.prices[type]) {
-    document.getElementById('item-price').value = m.prices[type];
-  } else if(m) {
-    document.getElementById('item-price').value = m.price;
+    newPrice = m.prices[type];
   }
+  
+  // ตรวจสอบว่าปุ่ม "พิเศษ" ถูกกดไว้หรือไม่ หากกดไว้ให้บวก 10
+  const isSpecial = document.getElementById('chip-special')?.classList.contains('active');
+  if (isSpecial) newPrice += 10;
+  
+  document.getElementById('item-price').value = newPrice;
+  
   document.querySelectorAll('.chip').forEach(c => {
-    c.classList.toggle('active', c.textContent===type);
+    if(c.id !== 'chip-special') { // ไม่แก้ไขสถานะของปุ่มพิเศษ
+        c.classList.toggle('active', c.textContent===type);
+    }
   });
+}
+
+// ฟังก์ชันเปิด/ปิดความพิเศษของเมนูปัจจุบัน (+10 บาท)
+function toggleItemSpecial() {
+  const chip = document.getElementById('chip-special');
+  const priceInp = document.getElementById('item-price');
+  const noteInp = document.getElementById('item-note');
+  let p = parseFloat(priceInp.value);
+  
+  chip.classList.toggle('active');
+  if (chip.classList.contains('active')) {
+    // บวกราคาเพิ่ม 10
+    if(!isNaN(p)) priceInp.value = p + 10;
+    // เพิ่มคำว่า "พิเศษ" ในหมายเหตุ
+    if(!noteInp.value.includes('พิเศษ')) {
+       noteInp.value = (noteInp.value + ' พิเศษ').trim();
+    }
+  } else {
+    // ลบราคาออก 10
+    if(!isNaN(p)) priceInp.value = Math.max(0, p - 10);
+    // ลบคำว่า "พิเศษ" ออก
+    noteInp.value = noteInp.value.replace('พิเศษ', '').trim();
+  }
 }
 
 // ============================================================
@@ -1093,6 +1128,10 @@ function addItem() {
   document.getElementById('item-note').value = '';
   document.getElementById('item-qty').value = '1';
   document.getElementById('type-row').style.display = 'none';
+  
+  // รีเซ็ตปุ่มพิเศษ
+  document.getElementById('chip-special')?.classList.remove('active');
+  
   selectedMenuId = null; selectedType = null;
   showToast(`✅ เพิ่ม: ${name}`);
   renderRecentTags();
@@ -1185,18 +1224,15 @@ function renderReceipt() {
 function calcTotal() {
   const sub = getSubtotal();
   const disc = parseFloat(document.getElementById('discount-inp').value)||0;
-  const special = document.getElementById('special-toggle').classList.contains('on');
-  const specialAmt = special ? orderItems.reduce((s,x)=>s+x.qty,0)*10 : 0;
+  // ไม่มีปุ่ม toggle พิเศษแล้ว แต่จะเก็บโค้ดไว้เผื่อ
+  const specialAmt = 0; 
   const total = Math.max(0, sub - disc + specialAmt);
   document.getElementById('rcpt-subtotal').textContent = '฿'+sub;
   document.getElementById('discount-show').textContent = disc>0 ? '-฿'+disc : '';
   document.getElementById('rcpt-total').textContent = '฿'+total;
   calcChange();
 }
-function toggleSpecial(el) {
-  el.classList.toggle('on');
-  calcTotal();
-}
+
 function calcChange() {
   const totalText = document.getElementById('rcpt-total').textContent.replace('฿','');
   const total = parseFloat(totalText)||0;
@@ -1255,61 +1291,58 @@ function showPreview() {
   const orderId = '#' + String(orderIdCounter).padStart(4,'0');
   const disc = parseFloat(document.getElementById('discount-inp').value)||0;
   const sub = getSubtotal();
-  const special = document.getElementById('special-toggle').classList.contains('on');
-  const specialAmt = special ? orderItems.reduce((s,x)=>s+x.qty,0)*10 : 0;
   const totalAmount = parseFloat(totalText) || 0;
 
   let html = '';
   if(settings.logoUrl) {
-    html += `<div style="text-align:center; margin-bottom:8px;"><img src="${settings.logoUrl}" crossorigin="anonymous" style="max-width:120px; max-height:120px; border-radius:8px;" onerror="this.style.display='none'"></div>`;
+    html += `<div style="text-align:center; margin-bottom:8px;"><img src="${settings.logoUrl}" crossorigin="anonymous" style="max-width:140px; max-height:140px; border-radius:8px;" onerror="this.style.display='none'"></div>`;
   }
   
+  // ขยายฟอนต์ขึ้นอีก 2 ระดับ เพื่อให้ชัดเจนยิ่งขึ้นเวลาพิมพ์
   html += `
-    <div style="text-align:center;font-weight:bold;font-size:26px;margin-bottom:8px;">${settings.shopname}</div>
-    <div style="text-align:center;font-size:18px;margin-bottom:12px;">โทร: ${settings.phone}</div>
+    <div style="text-align:center;font-weight:bold;font-size:32px;margin-bottom:8px;">${settings.shopname}</div>
+    <div style="text-align:center;font-size:22px;margin-bottom:12px;">โทร: ${settings.phone}</div>
     <div style="border-top:2px dashed #000;margin:12px 0;"></div>
-    <div style="display:flex;justify-content:space-between;font-size:18px;margin-bottom:4px;">
+    <div style="display:flex;justify-content:space-between;font-size:22px;margin-bottom:4px;">
       <span>ช่องทาง: ${chLabel}</span><span style="font-weight:bold;">${orderId}</span>
     </div>
-    <div style="font-size:18px;margin-bottom:4px;">ลูกค้า: ${customer}</div>
-    <div style="font-size:18px;color:#444;">${timeStr}</div>
+    <div style="font-size:22px;margin-bottom:4px;">ลูกค้า: ${customer}</div>
+    <div style="font-size:22px;color:#444;">${timeStr}</div>
     <div style="border-top:2px dashed #000;margin:12px 0;"></div>
   `;
   
   orderItems.forEach((item,i)=>{
     html += `
-      <div style="display:flex;justify-content:space-between;font-size:18px;margin-bottom:4px;">
-        <span style="font-weight:bold; flex:1; padding-right:10px;">${settings.showNum?(i+1)+'. ':''}${item.name}${item.type ? ' (' + item.type + ')' : ''} x${item.qty}</span>
-        <span style="font-weight:bold;">${item.price * item.qty}</span>
+      <div style="display:flex;justify-content:space-between;font-size:22px;margin-bottom:4px;">
+        <span style="font-weight:bold; flex:1; padding-right:10px; word-break: break-word;">${settings.showNum?(i+1)+'. ':''}${item.name}${item.type ? ' (' + item.type + ')' : ''} x${item.qty}</span>
+        <span style="font-weight:bold; white-space: nowrap;">${item.price * item.qty}</span>
       </div>
     `;
-    if(item.note) html += `<div style="font-size:16px;color:#555;padding-left:16px;margin-bottom:6px;">* ${item.note}</div>`;
+    if(item.note) html += `<div style="font-size:18px;color:#555;padding-left:16px;margin-bottom:6px;">* ${item.note}</div>`;
   });
   
   html += `<div style="border-top:2px dashed #000;margin:12px 0;"></div>`;
-  html += `<div style="display:flex;justify-content:space-between;font-size:18px;margin-bottom:4px;"><span>ยอดรวม</span><span>${sub}</span></div>`;
-  if(disc>0) html += `<div style="display:flex;justify-content:space-between;font-size:18px;margin-bottom:4px;"><span>ส่วนลด</span><span>-${disc}</span></div>`;
-  if(specialAmt>0) html += `<div style="display:flex;justify-content:space-between;font-size:18px;margin-bottom:4px;"><span>ส่งพิเศษ</span><span>+${specialAmt}</span></div>`;
+  html += `<div style="display:flex;justify-content:space-between;font-size:22px;margin-bottom:4px;"><span>ยอดรวม</span><span>${sub}</span></div>`;
+  if(disc>0) html += `<div style="display:flex;justify-content:space-between;font-size:22px;margin-bottom:4px;"><span>ส่วนลด</span><span>-${disc}</span></div>`;
   html += `<div style="border-top:3px solid #000;margin:12px 0;"></div>`;
-  html += `<div style="display:flex;justify-content:space-between;font-weight:bold;font-size:24px;margin-bottom:12px;"><span>รวมสุทธิ</span><span>${totalText} บาท</span></div>`;
+  html += `<div style="display:flex;justify-content:space-between;font-weight:bold;font-size:28px;margin-bottom:12px;"><span>รวมสุทธิ</span><span>${totalText} บาท</span></div>`;
   
   // PromptPay QR Code
   if(settings.promptpay && settings.qrCode) {
     const payload = getPromptPayPayload(settings.promptpay, totalAmount);
-    // เปลี่ยนมาใช้ qrserver เพราะรองรับ CORS ได้ดีกว่า
     const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(payload)}`;
     html += `
       <div style="text-align:center;margin-top:20px;">
-        <div style="font-size:18px;font-weight:bold;margin-bottom:8px;">ชำระเงินผ่าน QR Code</div>
+        <div style="font-size:22px;font-weight:bold;margin-bottom:8px;">ชำระเงินผ่าน QR Code</div>
         <img src="${qrUrl}" crossorigin="anonymous" style="width:200px;height:200px;">
-        <div style="font-size:16px;margin-top:8px;">พร้อมเพย์: ${settings.promptpay}</div>
+        <div style="font-size:20px;margin-top:8px;">พร้อมเพย์: ${settings.promptpay}</div>
       </div>
     `;
   }
   
   html += `<div style="border-top:2px dashed #000;margin:16px 0;"></div>`;
-  html += `<div style="text-align:center;font-size:18px;font-weight:bold;margin-bottom:8px;">${settings.footer}</div>`;
-  html += `<div style="text-align:center;font-size:16px;color:#555;">ขอบคุณที่อุดหนุนครับ/ค่ะ</div>`;
+  html += `<div style="text-align:center;font-size:22px;font-weight:bold;margin-bottom:8px;">${settings.footer}</div>`;
+  html += `<div style="text-align:center;font-size:20px;color:#555;">ขอบคุณที่อุดหนุนครับ/ค่ะ</div>`;
   
   const captureArea = document.getElementById('receipt-content-to-capture');
   captureArea.innerHTML = html;
@@ -1317,13 +1350,12 @@ function showPreview() {
   document.getElementById('preview-modal').classList.add('open');
   document.getElementById('preview-content').innerHTML = '<div style="text-align:center;padding:20px;">กำลังสร้างใบเสร็จ... ⏳</div>';
 
-  // ตรวจสอบและรอโหลดรูป (รวมถึง QR Code) ให้เสร็จสมบูรณ์ 100% ก่อนจับภาพ
   const images = captureArea.querySelectorAll('img');
   const promises = Array.from(images).map(img => {
     if (img.complete) return Promise.resolve();
     return new Promise(resolve => {
       img.onload = resolve;
-      img.onerror = resolve; // ไม่ว่าจะโหลดผ่านหรือไม่ ให้ทำงานต่อ
+      img.onerror = resolve; 
     });
   });
 
@@ -1335,7 +1367,7 @@ function showPreview() {
         useCORS: true,
         backgroundColor: '#ffffff'
       }).then(canvas => {
-        // [สำคัญมาก!] บังคับขนาดภาพให้กว้าง 384 พิกเซลเป๊ะๆ เพื่อป้องกันเครื่องพิมพ์รวน
+        // ล็อกความกว้างไว้ที่ 384px ป้องกันเครื่องพิมพ์เละ
         if (canvas.width !== 384) {
           const tempCanvas = document.createElement('canvas');
           tempCanvas.width = 384;
@@ -1351,7 +1383,7 @@ function showPreview() {
       }).catch(err => {
         document.getElementById('preview-content').innerHTML = `<div style="color:red">เกิดข้อผิดพลาดในการสร้างรูป: ${err.message}</div>`;
       });
-    }, 200); // ดีเลย์เล็กน้อยเพื่อให้เบราว์เซอร์จัดการฟอนต์และรูปให้เรียบร้อย
+    }, 200); 
   });
 }
 
@@ -1361,7 +1393,7 @@ function closePreview() {
 }
 
 // ============================================================
-// ฟังก์ชันแปลง Canvas เป็นภาพขาวดำให้ตรงกับเครื่อง 58mm (แก้ไขระยะล้น)
+// ฟังก์ชันแปลง Canvas เป็นภาพขาวดำให้ตรงกับเครื่อง 58mm
 // ============================================================
 function canvasToPrinterImage(canvas) {
   const ctx = canvas.getContext('2d');
@@ -1369,7 +1401,7 @@ function canvasToPrinterImage(canvas) {
   const height = canvas.height;
   const imgData = ctx.getImageData(0, 0, width, height).data;
   
-  const bytesWidth = 48; // เครื่อง 58mm = 384 จุด / 8 bit = 48 bytes (ห้ามเกินเด็ดขาด)
+  const bytesWidth = 48; // เครื่อง 58mm = 384 จุด / 8 bit = 48 bytes
   const buffer = new Uint8Array(bytesWidth * height);
   
   for (let y = 0; y < height; y++) {
@@ -1395,7 +1427,6 @@ function canvasToPrinterImage(canvas) {
     }
   }
   
-  // โค้ดส่งรูประบบ ESC/POS
   const header = new Uint8Array([0x1D, 0x76, 0x30, 0x00, 48, 0, height % 256, Math.floor(height / 256)]);
   const printData = new Uint8Array(header.length + buffer.length);
   printData.set(header);
@@ -1422,7 +1453,6 @@ async function executePrintImage() {
     
     const ESC = 0x1B, GS = 0x1D;
     const initCmd = new Uint8Array([ESC, 0x40]);
-    // สั่งเว้นบรรทัดเผื่อฉีก แล้วค่อยตัด
     const cutCmd = new Uint8Array([0x0A, 0x0A, 0x0A, GS, 0x56, 0x01]);
     
     const finalData = new Uint8Array(initCmd.length + printData.length + cutCmd.length);
@@ -1430,7 +1460,6 @@ async function executePrintImage() {
     finalData.set(printData, initCmd.length);
     finalData.set(cutCmd, initCmd.length + printData.length);
     
-    // ตั้งค่า Chunk ให้เล็กลงเพื่อความเสถียรสุดๆ 
     const CHUNK = 128;
     for(let i=0; i<finalData.length; i+=CHUNK) {
       const chunk = finalData.slice(i, i+CHUNK);
@@ -1438,7 +1467,6 @@ async function executePrintImage() {
         await btChar.writeValue(chunk);
       } else if (btChar.properties.writeWithoutResponse) {
         await btChar.writeValueWithoutResponse(chunk);
-        // หน่วงเวลาให้เครื่องพิมพ์ราคาประหยัดรับข้อมูลทัน
         await new Promise(r=>setTimeout(r, 20)); 
       }
     }
@@ -1611,7 +1639,7 @@ function reprintOrder(id) {
   if(!o) return;
   orderItems = o.items;
   renderReceipt();
-  showPreview(); // สั่งพริ้นใหม่จะเด้งหน้า Preview ขึ้นมา
+  showPreview(); 
 }
 
 // ============================================================
@@ -1666,7 +1694,6 @@ function renderMenuEditor() {
     </div>`).join('')}`;
   }).join('');
   
-  // Fill cat options
   const sel = document.getElementById('new-menu-cat');
   sel.innerHTML = cats.map(c=>`<option value="${c}">${c}</option>`).join('') + '<option value="ใหม่">+ หมวดใหม่</option>';
 }
@@ -1720,101 +1747,6 @@ function showToast(msg, type='ok') {
 function updateNote(id, val) {
   const item = orderItems.find(x=>x.id===id);
   if(item) item.note = val;
-}
-
-// ============================================================
-// BLUETOOTH PRINTER (58mm Thermal)
-// ============================================================
-let btDevice = null;
-let btChar = null;
-
-async function connectBluetooth() {
-  if(!navigator.bluetooth) {
-    alert('❌ ระบบมือถือหรือเบราว์เซอร์นี้ไม่รองรับบลูทูธ\\n\\nคำแนะนำ:\\n1. ใช้แอป Chrome บน Android หรือ PC\\n2. ต้องเปิดเว็บผ่าน https:// (ห้ามเป็นเปิดเป็นไฟล์จากในเครื่อง)\\n3. ระบบ iOS (iPhone/iPad) จะไม่สามารถใช้งานบลูทูธบนเว็บได้ครับ');
-    return;
-  }
-  
-  try {
-    // ต้องเรียก requestDevice ทันทีหลังจากกดปุ่ม เพื่อไม่ให้เบราว์เซอร์ตัดสิทธิ์ user gesture
-    btDevice = await navigator.bluetooth.requestDevice({
-      acceptAllDevices: true,
-      optionalServices: [
-        '000018f0-0000-1000-8000-00805f9b34fb',
-        '49535343-fe7d-4ae5-8fa9-9fafd205e455',
-        '0000ff00-0000-1000-8000-00805f9b34fb',
-        '0000ffe0-0000-1000-8000-00805f9b34fb',
-        'e7810a71-73ae-499d-8c15-faa9aef0c3f2' // รหัสทั่วไปของเครื่องพิมพ์จีน
-      ]
-    });
-    
-    showToast('กำลังพยายามเชื่อมต่อเข้ากับ ' + (btDevice.name || 'เครื่องพิมพ์') + '...');
-    btDevice.addEventListener('gattserverdisconnected', onBtDisconnected);
-    
-    const server = await btDevice.gatt.connect();
-    
-    let service, char;
-    const serviceUUIDs = [
-      '000018f0-0000-1000-8000-00805f9b34fb',
-      '49535343-fe7d-4ae5-8fa9-9fafd205e455',
-      '0000ff00-0000-1000-8000-00805f9b34fb',
-      '0000ffe0-0000-1000-8000-00805f9b34fb',
-      'e7810a71-73ae-499d-8c15-faa9aef0c3f2'
-    ];
-    
-    for(let i=0; i<serviceUUIDs.length; i++) {
-      try {
-        service = await server.getPrimaryService(serviceUUIDs[i]);
-        if(service) {
-          const chars = await service.getCharacteristics();
-          char = chars.find(c=>c.properties.write||c.properties.writeWithoutResponse);
-        }
-        if(char) break;
-      } catch(e){}
-    }
-    
-    if(!char) throw new Error('ไม่พบช่องทางรับส่งข้อมูลของเครื่องพิมพ์บลูทูธตัวนี้ครับ');
-    
-    btChar = char;
-    setBtStatus(true);
-    showToast(`✅ เชื่อมต่อ ${btDevice.name||'เครื่องพิมพ์'} สำเร็จ`);
-    
-  } catch(e) {
-    alert('❌ เชื่อมต่อไม่สำเร็จ:\\n' + e.message + '\\n\\nตรวจสอบให้แน่ใจว่าเครื่องพิมพ์เปิดอยู่ และไม่ได้ถูกเชื่อมต่อค้างไว้กับแอปอื่นครับ');
-    btDevice = null; 
-    btChar = null;
-    setBtStatus(false);
-  }
-}
-
-function onBtDisconnected() {
-  btChar = null;
-  setBtStatus(false);
-  showToast('⚠️ เครื่องพิมพ์ตัดการเชื่อมต่อ', 'error');
-}
-
-function disconnectBluetooth() {
-  if(btDevice && btDevice.gatt.connected) btDevice.gatt.disconnect();
-  btDevice = null; btChar = null;
-  setBtStatus(false);
-  showToast('🔌 ตัดการเชื่อมต่อแล้ว');
-}
-
-function setBtStatus(connected) {
-  const el = document.getElementById('bt-status');
-  const conn = document.getElementById('bt-connect-btn');
-  const disc = document.getElementById('bt-disconnect-btn');
-  if(!el) return;
-  if(connected) {
-    el.innerHTML = `🟢 เชื่อมต่อแล้ว: <strong>${btDevice?.name||'เครื่องพิมพ์'}</strong>`;
-    el.style.color = 'var(--green)';
-    conn.style.display = 'none';
-    disc.style.display = 'flex';
-  } else {
-    el.innerHTML = '⚪ ยังไม่ได้เชื่อมต่อ';
-    el.style.color = 'var(--text2)';
-    conn.style.display = 'flex';
-    disc.style.display = 'none';
-  }
 }
 
 // ============================================================
